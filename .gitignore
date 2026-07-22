@@ -121,3 +121,7 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+
+# Docs
+demo-script.md
+submission-checklist.md
