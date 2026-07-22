@@ -125,3 +125,8 @@ venv/
 # Docs
 demo-script.md
 submission-checklist.md
+
+# AI / Vector DB runtime artifacts
+vector_db/
+server/dist/
+server/test_data/
