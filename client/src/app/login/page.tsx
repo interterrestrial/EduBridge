@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { AxiosError } from 'axios';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 import styles from './login.module.css';
@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,8 +22,12 @@ export default function LoginPage() {
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.token, res.data.user);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'An error occurred during login');
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        setError(err.response?.data?.error || 'An error occurred during login');
+      } else {
+        setError('An error occurred during login');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +76,7 @@ export default function LoginPage() {
         </form>
 
         <p className={styles.linkText}>
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className={styles.link}>
             Sign up
           </Link>

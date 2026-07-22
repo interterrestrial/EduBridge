@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { AxiosError } from 'axios';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 import styles from './register.module.css';
@@ -16,7 +16,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   
   const { login } = useAuth();
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,8 +25,12 @@ export default function RegisterPage() {
     try {
       const res = await api.post('/auth/register', { name, email, password, role });
       login(res.data.token, res.data.user);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'An error occurred during registration');
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        setError(err.response?.data?.error || 'An error occurred during registration');
+      } else {
+        setError('An error occurred during registration');
+      }
     } finally {
       setIsLoading(false);
     }
