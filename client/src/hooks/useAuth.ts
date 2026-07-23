@@ -35,7 +35,12 @@ export const useAuth = () => {
   const login = (token: string, userData: User) => {
     localStorage.setItem('token', token);
     setUser(userData);
-    router.push('/dashboard'); // We will create this later
+    
+    if (userData.role === 'unassigned') {
+      router.push('/choose-role');
+    } else {
+      router.push('/dashboard');
+    }
   };
 
   const logout = () => {

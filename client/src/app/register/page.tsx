@@ -7,6 +7,8 @@ import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 import { User, Mail, Lock, UserPlus, ChevronDown, GraduationCap } from 'lucide-react';
 
+import { useGoogleLogin } from '@react-oauth/google';
+
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -36,10 +38,22 @@ export default function RegisterPage() {
     }
   };
 
-  const handleGoogleSignup = () => {
-    // TODO: Implement actual Google OAuth logic
-    console.log("Initiating Google Signup...");
-  };
+  const handleGoogleSignup = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setError('');
+      try {
+        const res = await api.post('/auth/google', { token: tokenResponse.access_token });
+        login(res.data.token, res.data.user);
+      } catch (err: unknown) {
+        if (err instanceof AxiosError) {
+          setError(err.response?.data?.error || 'Google signup failed');
+        } else {
+          setError('Google signup failed');
+        }
+      }
+    },
+    onError: () => setError('Google signup failed'),
+  });
 
   return (
     <div className="min-h-screen flex text-white font-sans bg-gradient-to-br from-[#1e1e2f] to-[#2a2a40]">

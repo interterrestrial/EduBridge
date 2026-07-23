@@ -11,7 +11,11 @@ export default function Home() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.push('/dashboard');
+        if (user.role === 'unassigned') {
+          router.push('/choose-role');
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         router.push('/login');
       }
