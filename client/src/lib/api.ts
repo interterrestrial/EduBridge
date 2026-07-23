@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Should be dynamic in production
+  baseURL: 'http://localhost:5001/api', // Should be dynamic in production
   headers: {
     'Content-Type': 'application/json',
   },

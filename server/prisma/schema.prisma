@@ -3,6 +3,45 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String?
+  role      String   @default("unassigned") // 'student', 'teacher', or 'unassigned'
+  provider  String   @default("local") // 'local' or 'google'
+  googleId  String?  @unique
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+}
+
+model StudentProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution        String?
+  course             String?
+  semester           String?
+  learningPreference String?
+  totalStudyHours    Int      @default(0)
+  createdAt          DateTime @default(now())
+}
+
+model TeacherProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   String?
+  department     String?
+  specialization String?
+  experience     Int?
+  createdAt      DateTime @default(now())
 }
