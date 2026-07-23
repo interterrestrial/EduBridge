@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { FileText, UploadCloud, Search, Filter, MoreVertical, BrainCircuit, Loader2, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 
-const STUDENT_ID = 'student_1';
-
 export default function NotesPage() {
+  const { user } = useAuth();
+  const studentId = user?.id || 'student_1';
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [notes, setNotes] = useState<any[]>([]);
@@ -20,7 +21,7 @@ export default function NotesPage() {
   const fetchNotes = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/notes/student/${STUDENT_ID}`);
+      const res = await api.get(`/notes/student/${studentId}`);
       setNotes(res.data.notes || []);
     } catch (err: any) {
       console.error('Error fetching notes:', err);
@@ -30,8 +31,10 @@ export default function NotesPage() {
   };
 
   useEffect(() => {
-    fetchNotes();
-  }, []);
+    if (studentId) {
+      fetchNotes();
+    }
+  }, [studentId]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -42,7 +45,7 @@ export default function NotesPage() {
       setMessage('Uploading and indexing document with Gemini vector store...');
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('studentId', STUDENT_ID);
+      formData.append('studentId', studentId);
       formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
 
       await api.post('/notes/upload', formData, {

@@ -4,11 +4,12 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -26,12 +27,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-[#1e1e2f] text-white font-sans flex">
-      {/* Sidebar - fixed width */}
-      <Sidebar />
+      {/* Collapsible Sidebar */}
+      <Sidebar
+        isCollapsed={isCollapsed}
+        toggleCollapse={() => setIsCollapsed(!isCollapsed)}
+      />
       
-      {/* Main Content Area - fluid width */}
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
-        <Navbar />
+      {/* Main Content Area - adjusts margin dynamically */}
+      <div
+        className={`flex-1 transition-all duration-300 flex flex-col min-h-screen ${
+          isCollapsed ? 'md:ml-0' : 'md:ml-64'
+        }`}
+      >
+        <Navbar 
+          isCollapsed={isCollapsed} 
+          toggleCollapse={() => setIsCollapsed(!isCollapsed)} 
+        />
         
         {/* Page Content */}
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">

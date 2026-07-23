@@ -130,3 +130,4 @@ submission-checklist.md
 vector_db/
 server/dist/
 server/test_data/
+server/uploads/

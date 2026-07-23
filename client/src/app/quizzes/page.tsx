@@ -2,15 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { Plus, CheckCircle2, XCircle, Loader2, Award, AlertTriangle } from 'lucide-react';
+import { Plus, CheckCircle2, XCircle, Loader2, Award, AlertTriangle, FileText, X } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 
-const STUDENT_ID = 'student_1';
-
 export default function QuizzesPage() {
+  const { user } = useAuth();
+  const studentId = user?.id || 'student_1';
+
   const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+
+  // Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [selectedNoteId, setSelectedNoteId] = useState<string>('all');
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [questionCount, setQuestionCount] = useState<number>(5);
+
+  // Active Quiz taking & evaluation state
   const [activeQuiz, setActiveQuiz] = useState<any>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [evaluation, setEvaluation] = useState<any>(null);
@@ -18,7 +29,7 @@ export default function QuizzesPage() {
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/quizzes/student/${STUDENT_ID}`);
+      const res = await api.get(`/quizzes/student/${studentId}`);
       setQuizzes(res.data.quizzes || []);
     } catch (err) {
       console.error('Error fetching quizzes:', err);
@@ -27,27 +38,44 @@ export default function QuizzesPage() {
     }
   };
 
+  const fetchNotes = async () => {
+    try {
+      const res = await api.get(`/notes/student/${studentId}`);
+      setNotes(res.data.notes || []);
+    } catch (err) {
+      console.error('Error fetching notes:', err);
+    }
+  };
+
   useEffect(() => {
-    fetchQuizzes();
-  }, []);
+    if (studentId) {
+      fetchQuizzes();
+      fetchNotes();
+    }
+  }, [studentId]);
 
   const handleGenerate = async () => {
     try {
       setGenerating(true);
+      const targetNoteId = selectedNoteId === 'all' ? undefined : selectedNoteId;
+      const targetNote = notes.find((n) => n.id === targetNoteId);
+
       const res = await api.post('/quizzes/generate', {
-        studentId: STUDENT_ID,
-        difficulty: 'medium',
-        count: 3,
-        title: 'Adaptive Practice Assessment',
+        studentId,
+        noteId: targetNoteId,
+        difficulty,
+        count: Number(questionCount),
+        title: targetNote ? `Quiz on ${targetNote.title}` : `Assessment (${difficulty.toUpperCase()})`,
       });
 
       setActiveQuiz(res.data);
       setAnswers({});
       setEvaluation(null);
+      setShowModal(false);
       fetchQuizzes();
     } catch (err: any) {
       console.error('Quiz generation error:', err);
-      alert(err.response?.data?.error || 'Failed to generate quiz. Please ensure notes are uploaded.');
+      alert(err.response?.data?.error || 'Failed to generate quiz. Please ensure study notes are uploaded.');
     } finally {
       setGenerating(false);
     }
@@ -64,7 +92,7 @@ export default function QuizzesPage() {
 
       const res = await api.post('/quizzes/submit', {
         quizId: activeQuiz.id,
-        studentId: STUDENT_ID,
+        studentId,
         answers: formattedAnswers,
       });
 
@@ -81,18 +109,106 @@ export default function QuizzesPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white">AI Quizzes</h1>
-            <p className="text-[#a0a0b0]">Test your knowledge and evaluate concept mastery.</p>
+            <p className="text-[#a0a0b0]">Generate targeted practice assessments from specific uploaded notes.</p>
           </div>
           <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+            onClick={() => setShowModal(true)}
+            className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
           >
-            {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-            {generating ? 'Generating Questions with Gemini...' : 'Generate New Quiz'}
+            <Plus className="w-5 h-5" /> Generate New Quiz
           </button>
         </div>
 
+        {/* Generate Quiz Config Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-black/90 border border-indigo-500/40 rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
+              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-indigo-400" /> Quiz Configuration
+                </h2>
+                <button onClick={() => setShowModal(false)} className="text-[#a0a0b0] hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">Select Target Note Document</label>
+                  <select
+                    value={selectedNoteId}
+                    onChange={(e) => setSelectedNoteId(e.target.value)}
+                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="all">📚 All Uploaded Notes (Comprehensive)</option>
+                    {notes.map((n) => (
+                      <option key={n.id} value={n.id}>
+                        📄 {n.title} ({n.fileType})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">Difficulty Level</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['easy', 'medium', 'hard'] as const).map((lvl) => (
+                      <button
+                        key={lvl}
+                        onClick={() => setDifficulty(lvl)}
+                        className={`py-2 rounded-xl text-xs uppercase font-bold border transition-colors ${
+                          difficulty === lvl
+                            ? 'bg-indigo-500/30 border-indigo-500 text-white'
+                            : 'bg-white/5 border-white/5 text-[#a0a0b0] hover:bg-white/10'
+                        }`}
+                      >
+                        {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">Number of Questions</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[3, 5, 10].map((cnt) => (
+                      <button
+                        key={cnt}
+                        onClick={() => setQuestionCount(cnt)}
+                        className={`py-2 rounded-xl text-xs font-bold border transition-colors ${
+                          questionCount === cnt
+                            ? 'bg-indigo-500/30 border-indigo-500 text-white'
+                            : 'bg-white/5 border-white/5 text-[#a0a0b0] hover:bg-white/10'
+                        }`}
+                      >
+                        {cnt} Questions
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 rounded-xl text-sm text-[#a0a0b0] hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleGenerate}
+                  disabled={generating}
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  {generating ? 'Generating Quiz...' : 'Generate Quiz'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Active Quiz Card */}
         {activeQuiz && (
           <div className="bg-black/40 border border-indigo-500/30 rounded-2xl p-6 space-y-6">
             <div className="flex justify-between items-center border-b border-white/10 pb-4">
@@ -131,7 +247,7 @@ export default function QuizzesPage() {
                 )}
 
                 <div className="space-y-4">
-                  <h4 className="text-lg font-bold text-white">Detailed Explanations:</h4>
+                  <h4 className="text-lg font-bold text-white">Detailed Step-by-Step Explanations:</h4>
                   {evaluation.evaluations.map((ev: any, idx: number) => (
                     <div key={idx} className="bg-white/5 border border-white/10 p-4 rounded-xl space-y-2">
                       <div className="flex items-center gap-2 font-bold text-white">
@@ -197,6 +313,7 @@ export default function QuizzesPage() {
           </div>
         )}
 
+        {/* Quizzes List */}
         <div className="bg-black/20 border border-white/10 rounded-2xl overflow-hidden">
           <div className="p-6 border-b border-white/10 bg-white/5">
             <h2 className="text-xl font-bold text-white">Recent Quizzes</h2>
@@ -219,7 +336,7 @@ export default function QuizzesPage() {
                   <div>
                     <h3 className="text-white font-bold text-lg">{quiz.title}</h3>
                     <p className="text-sm text-[#a0a0b0]">
-                      {quiz.questions?.length || 3} Questions • Level: {quiz.difficulty}
+                      {quiz.questions?.length || 5} Questions • Level: {quiz.difficulty}
                     </p>
                   </div>
                   <button

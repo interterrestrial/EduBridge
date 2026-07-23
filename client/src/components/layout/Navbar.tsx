@@ -1,11 +1,16 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Bell, Search, Menu } from 'lucide-react';
+import { Bell, Search, Menu, PanelLeftOpen } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Image from 'next/image';
 
-export default function Navbar() {
+interface NavbarProps {
+  isCollapsed?: boolean;
+  toggleCollapse?: () => void;
+}
+
+export default function Navbar({ isCollapsed, toggleCollapse }: NavbarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
@@ -15,6 +20,7 @@ export default function Navbar() {
     if (pathname.includes('ai-chat')) return 'AI Tutor';
     if (pathname.includes('flashcards')) return 'Flashcards';
     if (pathname.includes('quizzes')) return 'Quizzes';
+    if (pathname.includes('timetable')) return 'AI Timetable';
     if (pathname.includes('progress')) return 'Progress Analytics';
     if (pathname.includes('settings')) return 'Settings';
     return 'EduBridge';
@@ -23,9 +29,24 @@ export default function Navbar() {
   return (
     <div className="h-20 border-b border-white/10 bg-[#1e1e2f]/80 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10 w-full">
       <div className="flex items-center gap-4">
-        <button className="md:hidden p-2 text-[#a0a0b0] hover:text-white rounded-lg hover:bg-white/5">
+        {/* Mobile menu toggle (default hidden md) */}
+        <button 
+          onClick={toggleCollapse} 
+          className="md:hidden p-2 text-[#a0a0b0] hover:text-white rounded-lg hover:bg-white/5"
+        >
           <Menu className="w-6 h-6" />
         </button>
+
+        {/* Desktop show sidebar button when collapsed */}
+        {isCollapsed && (
+          <button 
+            onClick={toggleCollapse} 
+            className="hidden md:flex p-2 text-[#a0a0b0] hover:text-white rounded-lg hover:bg-white/5 bg-white/5 border border-white/10 transition-colors shadow-lg"
+            title="Show Sidebar"
+          >
+            <PanelLeftOpen className="w-5 h-5" />
+          </button>
+        )}
         <h1 className="text-xl font-bold text-white hidden md:block">{getPageTitle()}</h1>
       </div>
 
@@ -61,7 +82,6 @@ export default function Navbar() {
             </div>
           </div>
           
-          {/* Extremely basic dropdown mock for logout */}
           <div className="absolute top-full mt-2 right-6 bg-[#2a2a40] border border-white/10 rounded-xl shadow-xl w-48 py-2 hidden group-hover:block">
              <div className="px-4 py-2 border-b border-white/5 mb-2">
                <p className="text-sm text-white font-medium truncate">{user?.email}</p>

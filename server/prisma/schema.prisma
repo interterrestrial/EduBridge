@@ -25,7 +25,12 @@ model User {
   quizzes        Quiz[]
   quizAttempts   QuizAttempt[]
   flashcards     Flashcard[]
+  chatSessions   ChatSession[]
   chatMessages   ChatMessage[]
+  studySchedules StudySchedule[]
+  attendance     AttendanceRecord[]
+  pushReceived   TeacherPushAssignment[] @relation("StudentPushAssignments")
+  pushSent       TeacherPushAssignment[] @relation("TeacherPushAssignments")
 }
 
 model StudentProfile {
@@ -60,9 +65,10 @@ model Note {
   student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  quizzes      Quiz[]
-  flashcards   Flashcard[]
-  chatMessages ChatMessage[]
+  quizzes         Quiz[]
+  flashcards      Flashcard[]
+  chatMessages    ChatMessage[]
+  pushAssignments TeacherPushAssignment[]
 }
 
 model Quiz {
@@ -76,7 +82,8 @@ model Quiz {
   student       User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
 
-  attempts QuizAttempt[]
+  attempts        QuizAttempt[]
+  pushAssignments TeacherPushAssignment[]
 }
 
 model QuizAttempt {
@@ -105,14 +112,64 @@ model Flashcard {
   createdAt DateTime @default(now())
 }
 
+model ChatSession {
+  id        String   @id @default(uuid())
+  title     String
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages ChatMessage[]
+}
+
 model ChatMessage {
-  id          String   @id @default(uuid())
+  id          String       @id @default(uuid())
   studentId   String
-  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student     User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sessionId   String?
+  session     ChatSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   noteId      String?
-  note        Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  note        Note?        @relation(fields: [noteId], references: [id], onDelete: SetNull)
   question    String
   answer      String
-  sourcesJson String   // Stores JSON array of ChatSource
-  createdAt   DateTime @default(now())
+  sourcesJson String       // Stores JSON array of ChatSource
+  createdAt   DateTime     @default(now())
+}
+
+model StudySchedule {
+  id           String   @id @default(uuid())
+  studentId    String
+  student      User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  examDate     String
+  subject      String
+  dailyHours   Int      @default(2)
+  scheduleJson String   // Stores JSON array of daily study blocks
+  createdAt    DateTime @default(now())
+}
+
+model AttendanceRecord {
+  id        String   @id @default(uuid())
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject   String
+  status    String   @default("present") // present or absent
+  date      String
+  createdAt DateTime @default(now())
+}
+
+model TeacherPushAssignment {
+  id        String   @id @default(uuid())
+  teacherId String
+  teacher   User     @relation("TeacherPushAssignments", fields: [teacherId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User     @relation("StudentPushAssignments", fields: [studentId], references: [id], onDelete: Cascade)
+  title     String
+  noteId    String?
+  note      Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  quizId    String?
+  quiz      Quiz?    @relation(fields: [quizId], references: [id], onDelete: SetNull)
+  dueDate   String?
+  status    String   @default("pending") // pending or completed
+  createdAt DateTime @default(now())
 }

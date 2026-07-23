@@ -17,8 +17,12 @@ export class RagService {
     question: string,
     systemPrompt: string,
     noteId?: string,
-    topK: number = 5
+    topK: number = 8
   ): Promise<ChatResponse> {
+    const isMetaQuery = /^(who (are|am) (you|i)|hello|hi|hey|who is this|what can you do)/i.test(
+      question.trim()
+    );
+
     // 1. Retrieve top matching chunks
     const chunks = await this.retrievalService.retrieveRelevantContext(
       studentId,
@@ -42,12 +46,16 @@ ${question}`;
     // 4. Generate response via Gemini
     const answer = await this.llmService.generate(fullPrompt);
 
-    // 5. Build source citations
-    const sources: ChatSource[] = chunks.map((chunk) => ({
-      documentTitle: chunk.metadata.documentTitle || 'Study Notes',
-      pageNumber: chunk.metadata.pageNumber,
-      contentSnippet: chunk.pageContent.slice(0, 150) + '...',
-    }));
+    // 5. Build source citations ONLY if query is a real academic/study query & context was used
+    let sources: ChatSource[] = [];
+
+    if (!isMetaQuery && chunks.length > 0) {
+      sources = chunks.map((chunk) => ({
+        documentTitle: chunk.metadata.documentTitle || 'Study Notes',
+        pageNumber: chunk.metadata.pageNumber,
+        contentSnippet: chunk.pageContent.slice(0, 150) + '...',
+      }));
+    }
 
     return {
       answer,
