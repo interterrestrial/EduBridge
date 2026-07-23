@@ -15,7 +15,7 @@
     "@langchain/community": "^1.1.29",
     "@langchain/core": "^1.2.3",
     "@langchain/google-genai": "^2.2.0",
-    "@prisma/client": "^7.9.0",
+    "@prisma/client": "^5.22.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -30,8 +30,8 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.1.1",
-    "prisma": "^7.9.0",
+    "prisma": "^5.22.0",
     "ts-node": "^10.9.2",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   }
 }

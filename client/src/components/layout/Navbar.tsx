@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Bell, Search, Menu } from 'lucide-react';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import Image from 'next/image';
 
 export default function Navbar() {

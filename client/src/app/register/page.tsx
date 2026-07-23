@@ -94,7 +94,7 @@ export default function RegisterPage() {
           <p className="text-[#a0a0b0] text-sm mb-8 text-center">Join EduBridge and transform your learning</p>
           
           <button 
-            onClick={handleGoogleSignup}
+            onClick={() => handleGoogleSignup()}
             type="button"
             className="w-full bg-white text-gray-900 font-semibold rounded-xl py-3 px-4 flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors mb-6 shadow-sm"
           >
