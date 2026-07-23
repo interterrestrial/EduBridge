@@ -1,75 +1,209 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { Send, Bot, User, Paperclip } from 'lucide-react';
+import { Send, Bot, User, Loader2, BookOpen } from 'lucide-react';
+import api from '../../lib/api';
+
+const STUDENT_ID = 'student_1';
+
+interface Message {
+  id?: string;
+  sender: 'bot' | 'user';
+  text: string;
+  sources?: any[];
+}
 
 export default function AIChatPage() {
+  const searchParams = useSearchParams();
+  const noteId = searchParams.get('noteId') || undefined;
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [fetchingHistory, setFetchingHistory] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const fetchHistory = async () => {
+    try {
+      setFetchingHistory(true);
+      const res = await api.get(`/ai/history/${STUDENT_ID}`);
+      const history = res.data.history || [];
+
+      if (history.length === 0) {
+        setMessages([
+          {
+            sender: 'bot',
+            text: "Hello! I'm your EduBridge AI Tutor. Ask me any question based on your uploaded study notes!",
+          },
+        ]);
+      } else {
+        const formatted: Message[] = [];
+        history.forEach((item: any) => {
+          formatted.push({ sender: 'user', text: item.question });
+          formatted.push({ sender: 'bot', text: item.answer, sources: item.sources });
+        });
+        setMessages(formatted);
+      }
+    } catch (err: any) {
+      console.error('Error fetching chat history:', err);
+    } finally {
+      setFetchingHistory(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+
+    const userText = input.trim();
+    setInput('');
+
+    setMessages((prev) => [...prev, { sender: 'user', text: userText }]);
+    setLoading(true);
+
+    try {
+      const res = await api.post('/ai/chat', {
+        studentId: STUDENT_ID,
+        question: userText,
+        noteId,
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: res.data.answer,
+          sources: res.data.sources,
+        },
+      ]);
+    } catch (err: any) {
+      console.error('Chat error:', err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: 'Sorry, I encountered an issue retrieving an answer. Please ensure you have uploaded study notes!',
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
-        
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white">AI Tutor</h1>
-          <p className="text-[#a0a0b0]">Ask questions about your uploaded notes or general topics.</p>
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-white">AI Tutor Chat</h1>
+            <p className="text-[#a0a0b0]">
+              {noteId ? 'Focusing on selected note' : 'Grounded answers strictly using your uploaded notes.'}
+            </p>
+          </div>
         </div>
 
         <div className="flex-1 bg-black/20 border border-white/10 rounded-2xl flex flex-col overflow-hidden relative">
-          
-          {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            
-            <div className="flex items-start gap-4 max-w-[80%]">
-              <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0 border border-indigo-500/30">
-                <Bot className="w-5 h-5 text-indigo-400" />
+            {fetchingHistory ? (
+              <div className="text-center py-12 text-[#a0a0b0] flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-indigo-400" /> Loading past chat history...
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm p-4 text-sm text-[#e0e0e0] leading-relaxed">
-                Hello! I'm your AI tutor. I have access to your uploaded notes, including "Operating Systems - Chapter 4" and "Database Management Systems". How can I help you study today?
-              </div>
-            </div>
+            ) : (
+              messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex items-start gap-4 max-w-[85%] ${
+                    msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''
+                  }`}
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${
+                      msg.sender === 'bot'
+                        ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
+                        : 'bg-purple-500/20 border-purple-500/30 text-purple-400'
+                    }`}
+                  >
+                    {msg.sender === 'bot' ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                  </div>
 
-            <div className="flex items-start gap-4 max-w-[80%] ml-auto flex-row-reverse">
-              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0 border border-purple-500/30">
-                <User className="w-5 h-5 text-purple-400" />
-              </div>
-              <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-2xl rounded-tr-sm p-4 text-sm text-white leading-relaxed">
-                Can you explain what a race condition is from the Operating Systems notes?
-              </div>
-            </div>
+                  <div
+                    className={`p-4 text-sm leading-relaxed rounded-2xl ${
+                      msg.sender === 'bot'
+                        ? 'bg-white/5 border border-white/10 rounded-tl-sm text-[#e0e0e0]'
+                        : 'bg-indigo-500/20 border border-indigo-500/30 rounded-tr-sm text-white'
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap">{msg.text}</div>
 
-            <div className="flex items-start gap-4 max-w-[80%]">
-              <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0 border border-indigo-500/30">
-                <Bot className="w-5 h-5 text-indigo-400" />
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm p-4 text-sm text-[#e0e0e0] leading-relaxed space-y-3">
-                <p>Based on your "Operating Systems - Chapter 4" notes, a <strong>race condition</strong> is a situation where multiple processes or threads access and manipulate shared data concurrently.</p>
-                <p>The final outcome of the execution depends on the specific order in which the instructions are executed. This can lead to unpredictable behavior and data corruption.</p>
-                <div className="bg-black/40 border border-white/10 p-3 rounded-xl mt-3 font-mono text-xs text-indigo-300">
-                  Example: Process A and Process B both try to increment a shared variable `counter = 5` at the exact same time. Instead of resulting in 7, the final value might be 6 because they overwrote each other's operation.
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-white/10 text-xs text-indigo-300 space-y-1">
+                        <div className="font-semibold flex items-center gap-1 text-[#a0a0b0]">
+                          <BookOpen className="w-3.5 h-3.5 text-indigo-400" /> Cited Sources:
+                        </div>
+                        {msg.sources.map((src: any, sIdx: number) => (
+                          <div key={sIdx} className="bg-black/30 p-2 rounded border border-white/5">
+                            📌 <strong>{src.documentTitle}</strong> (Page {src.pageNumber || 1})
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <p>Would you like me to generate a practice question about this?</p>
-              </div>
-            </div>
+              ))
+            )}
 
+            {loading && (
+              <div className="flex items-start gap-4 max-w-[80%]">
+                <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0 border border-indigo-500/30 text-indigo-400">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm p-4 text-sm text-[#a0a0b0] flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-400" /> Searching notes and generating response...
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
           <div className="p-4 border-t border-white/10 bg-black/40 backdrop-blur-md">
-            <div className="relative flex items-end gap-2">
-              <button className="p-3 text-[#a0a0b0] hover:text-white transition-colors">
-                <Paperclip className="w-5 h-5" />
-              </button>
-              <textarea 
-                rows={1}
-                placeholder="Ask your AI tutor..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-white placeholder-[#a0a0b0] focus:outline-none focus:border-indigo-500/50 resize-none max-h-32 min-h-[48px]"
-              ></textarea>
-              <button className="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-xl transition-colors shadow-lg shadow-indigo-500/20">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSend();
+              }}
+              className="relative flex items-center gap-2"
+            >
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask a question about your study materials..."
+                disabled={loading}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-white placeholder-[#a0a0b0] focus:outline-none focus:border-indigo-500/50"
+              />
+              <button
+                type="submit"
+                disabled={loading || !input.trim()}
+                className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white p-3 rounded-xl transition-colors shadow-lg shadow-indigo-500/20 shrink-0"
+              >
                 <Send className="w-5 h-5" />
               </button>
-            </div>
+            </form>
           </div>
         </div>
-
       </div>
     </DashboardLayout>
   );

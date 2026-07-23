@@ -21,6 +21,11 @@ model User {
 
   studentProfile StudentProfile?
   teacherProfile TeacherProfile?
+  notes          Note[]
+  quizzes        Quiz[]
+  quizAttempts   QuizAttempt[]
+  flashcards     Flashcard[]
+  chatMessages   ChatMessage[]
 }
 
 model StudentProfile {
@@ -44,4 +49,70 @@ model TeacherProfile {
   specialization String?
   experience     Int?
   createdAt      DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  title     String
+  filePath  String
+  fileType  String
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  quizzes      Quiz[]
+  flashcards   Flashcard[]
+  chatMessages ChatMessage[]
+}
+
+model Quiz {
+  id            String   @id @default(uuid())
+  title         String
+  difficulty    String   @default("medium") // easy, medium, hard
+  questionsJson String   // Stores JSON array of QuizQuestion
+  noteId        String?
+  note          Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  studentId     String
+  student       User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  attempts QuizAttempt[]
+}
+
+model QuizAttempt {
+  id             String   @id @default(uuid())
+  quizId         String
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  score          Int
+  totalQuestions Int
+  accuracy       Int
+  weakTopicsJson String   // Stores JSON array of weak topics
+  createdAt      DateTime @default(now())
+}
+
+model Flashcard {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  topic     String
+  type      String   @default("concept") // definition, concept, formula, comparison
+  noteId    String?
+  note      Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  studentId   String
+  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  noteId      String?
+  note        Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  question    String
+  answer      String
+  sourcesJson String   // Stores JSON array of ChatSource
+  createdAt   DateTime @default(now())
 }

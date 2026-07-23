@@ -16,13 +16,15 @@
     "@langchain/core": "^1.2.3",
     "@langchain/google-genai": "^2.2.0",
     "@prisma/client": "^5.22.0",
+    "@types/multer": "^2.2.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "faiss-node": "^0.5.1",
     "google-auth-library": "^10.9.0",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
