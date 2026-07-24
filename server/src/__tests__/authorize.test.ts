@@ -10,14 +10,20 @@ describe('requireRole', () => {
   beforeEach(() => next.mockClear());
 
   it('403s when user role not allowed', () => {
-    expect(() => requireRole('teacher')(mockReq({ id: 's1', email: 'e', role: 'student' }), {} as any, next)).toThrow(ApiError);
+    requireRole('teacher')(mockReq({ id: 's1', email: 'e', role: 'student' }), {} as any, next);
+    expect(next).toHaveBeenCalledWith(expect.any(ApiError));
+    const err = next.mock.calls[0][0];
+    expect(err.statusCode).toBe(403);
   });
   it('passes when role allowed', () => {
     requireRole('student')(mockReq({ id: 's1', email: 'e', role: 'student' }), {} as any, next);
-    expect(next).toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(); // called with no args = success
   });
   it('401s when no user', () => {
-    expect(() => requireRole('student')(mockReq(undefined), {} as any, next)).toThrow(ApiError);
+    requireRole('student')(mockReq(undefined), {} as any, next);
+    expect(next).toHaveBeenCalledWith(expect.any(ApiError));
+    const err = next.mock.calls[0][0];
+    expect(err.statusCode).toBe(401);
   });
 });
 

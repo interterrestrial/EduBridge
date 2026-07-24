@@ -10,10 +10,12 @@ export const requireRole =
   (...roles: string[]) =>
   (req: AuthRequest, _res: Response, next: NextFunction): void => {
     if (!req.user) {
-      throw new ApiError(401, 'Unauthorized: authentication required');
+      next(new ApiError(401, 'Unauthorized: authentication required'));
+      return;
     }
     if (!roles.includes(req.user.role)) {
-      throw new ApiError(403, `Forbidden: requires role ${roles.join(' or ')}`);
+      next(new ApiError(403, `Forbidden: requires role ${roles.join(' or ')}`));
+      return;
     }
     next();
   };

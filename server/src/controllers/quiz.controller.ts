@@ -34,8 +34,8 @@ export const submitQuiz = asyncHandler(async (req: AuthRequest, res: Response) =
   const studentId = resolveStudentId(req);
   const { quizId, answers } = req.body;
   throwIfMissing({ quizId, answers });
-  const quiz = await prisma.quiz.findUnique({ where: { id: quizId } });
-  if (!quiz) throw new ApiError(404, 'Quiz not found');
+  const quiz = await prisma.quiz.findFirst({ where: { id: quizId, studentId } });
+  if (!quiz) throw new ApiError(404, 'Quiz not found or not owned by you');
   const questions = JSON.parse(quiz.questionsJson);
   const result = evalService.evaluateQuizAttempt({ quizId, studentId, answers }, questions);
   const attempt = await prisma.quizAttempt.create({

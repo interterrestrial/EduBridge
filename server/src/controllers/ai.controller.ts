@@ -99,6 +99,9 @@ export const chatTutor = asyncHandler(async (req: AuthRequest, res: Response) =>
     const newSession = await prisma.chatSession.create({ data: { studentId, title: question.slice(0, 30) + '...' } });
     activeSessionId = newSession.id;
   } else {
+    // Ownership: ensure the session belongs to the caller before writing into it
+    const ownedSession = await prisma.chatSession.findFirst({ where: { id: activeSessionId, studentId } });
+    if (!ownedSession) throw new ApiError(404, 'Session not found or not owned by you');
     await prisma.chatSession.update({ where: { id: activeSessionId }, data: { updatedAt: new Date() } }).catch(() => {});
   }
 
