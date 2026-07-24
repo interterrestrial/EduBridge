@@ -19,18 +19,20 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  studentProfile StudentProfile?
-  teacherProfile TeacherProfile?
-  notes          Note[]
-  quizzes        Quiz[]
-  quizAttempts   QuizAttempt[]
-  flashcards     Flashcard[]
-  chatSessions   ChatSession[]
-  chatMessages   ChatMessage[]
-  studySchedules StudySchedule[]
-  attendance     AttendanceRecord[]
-  pushReceived   TeacherPushAssignment[] @relation("StudentPushAssignments")
-  pushSent       TeacherPushAssignment[] @relation("TeacherPushAssignments")
+  studentProfile   StudentProfile?
+  teacherProfile   TeacherProfile?
+  notes            Note[]
+  noteFolders      NoteFolder[]
+  quizzes          Quiz[]
+  quizAttempts     QuizAttempt[]
+  flashcards       Flashcard[]
+  flashcardFolders FlashcardFolder[]
+  chatSessions     ChatSession[]
+  chatMessages     ChatMessage[]
+  studySchedules   StudySchedule[]
+  attendance       AttendanceRecord[]
+  pushReceived     TeacherPushAssignment[] @relation("StudentPushAssignments")
+  pushSent         TeacherPushAssignment[] @relation("TeacherPushAssignments")
 }
 
 model StudentProfile {
@@ -56,26 +58,42 @@ model TeacherProfile {
   createdAt      DateTime @default(now())
 }
 
-model Note {
+model NoteFolder {
   id        String   @id @default(uuid())
-  title     String
-  filePath  String
-  fileType  String
+  name      String
+  color     String   @default("#6366f1")
   studentId String
   student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+
+  notes Note[]
+}
+
+model Note {
+  id        String      @id @default(uuid())
+  title     String
+  filePath  String
+  fileType  String
+  folderId  String?
+  folder    NoteFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  studentId String
+  student   User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
 
   quizzes         Quiz[]
   flashcards      Flashcard[]
   chatMessages    ChatMessage[]
   pushAssignments TeacherPushAssignment[]
+
+  @@index([studentId])
+  @@index([folderId])
 }
 
 model Quiz {
   id            String   @id @default(uuid())
   title         String
   difficulty    String   @default("medium") // easy, medium, hard
-  questionsJson String   // Stores JSON array of QuizQuestion
+  questionsJson String // Stores JSON array of QuizQuestion
   noteId        String?
   note          Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
   studentId     String
@@ -84,6 +102,8 @@ model Quiz {
 
   attempts        QuizAttempt[]
   pushAssignments TeacherPushAssignment[]
+
+  @@index([studentId])
 }
 
 model QuizAttempt {
@@ -95,21 +115,40 @@ model QuizAttempt {
   score          Int
   totalQuestions Int
   accuracy       Int
-  weakTopicsJson String   // Stores JSON array of weak topics
+  weakTopicsJson String // Stores JSON array of weak topics
   createdAt      DateTime @default(now())
+
+  @@index([studentId])
+}
+
+model FlashcardFolder {
+  id        String   @id @default(uuid())
+  name      String
+  topic     String?
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  noteId    String?
+  createdAt DateTime @default(now())
+
+  flashcards Flashcard[]
 }
 
 model Flashcard {
-  id        String   @id @default(uuid())
+  id        String           @id @default(uuid())
   question  String
   answer    String
   topic     String
-  type      String   @default("concept") // definition, concept, formula, comparison
+  type      String           @default("concept") // definition, concept, formula, comparison
+  folderId  String?
+  folder    FlashcardFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   noteId    String?
-  note      Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  note      Note?            @relation(fields: [noteId], references: [id], onDelete: SetNull)
   studentId String
-  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  student   User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([studentId])
+  @@index([folderId])
 }
 
 model ChatSession {
@@ -133,8 +172,11 @@ model ChatMessage {
   note        Note?        @relation(fields: [noteId], references: [id], onDelete: SetNull)
   question    String
   answer      String
-  sourcesJson String       // Stores JSON array of ChatSource
+  sourcesJson String // Stores JSON array of ChatSource
   createdAt   DateTime     @default(now())
+
+  @@index([studentId])
+  @@index([sessionId])
 }
 
 model StudySchedule {
@@ -144,8 +186,10 @@ model StudySchedule {
   examDate     String
   subject      String
   dailyHours   Int      @default(2)
-  scheduleJson String   // Stores JSON array of daily study blocks
+  scheduleJson String // Stores JSON array of daily study blocks
   createdAt    DateTime @default(now())
+
+  @@index([studentId])
 }
 
 model AttendanceRecord {
@@ -172,4 +216,7 @@ model TeacherPushAssignment {
   dueDate   String?
   status    String   @default("pending") // pending or completed
   createdAt DateTime @default(now())
+
+  @@index([studentId])
+  @@index([teacherId])
 }
