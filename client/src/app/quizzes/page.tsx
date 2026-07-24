@@ -108,12 +108,12 @@ export default function QuizzesPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white">AI Quizzes</h1>
-            <p className="text-[#a0a0b0]">Generate targeted practice assessments from specific uploaded notes.</p>
+            <h1 className="font-heading text-3xl font-bold text-white">AI Quizzes</h1>
+            <p className="text-[#a0a0a0]">Generate targeted practice assessments from specific uploaded notes.</p>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20 cursor-pointer"
           >
             <Plus className="w-5 h-5" /> Generate New Quiz
           </button>
@@ -122,12 +122,12 @@ export default function QuizzesPage() {
         {/* Generate Quiz Config Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-black/90 border border-indigo-500/40 rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
-              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
+              <div className="flex justify-between items-center border-b border-border pb-4">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-indigo-400" /> Quiz Configuration
+                  <FileText className="w-5 h-5 text-primary" /> Quiz Configuration
                 </h2>
-                <button onClick={() => setShowModal(false)} className="text-[#a0a0b0] hover:text-white">
+                <button onClick={() => setShowModal(false)} className="text-[#a0a0a0] hover:text-white cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -138,7 +138,7 @@ export default function QuizzesPage() {
                   <select
                     value={selectedNoteId}
                     onChange={(e) => setSelectedNoteId(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-colors"
                   >
                     <option value="all">📚 All Uploaded Notes (Comprehensive)</option>
                     {notes.map((n) => (
@@ -156,10 +156,10 @@ export default function QuizzesPage() {
                       <button
                         key={lvl}
                         onClick={() => setDifficulty(lvl)}
-                        className={`py-2 rounded-xl text-xs uppercase font-bold border transition-colors ${
+                        className={`py-2 rounded-xl text-xs uppercase font-bold border transition-colors cursor-pointer ${
                           difficulty === lvl
-                            ? 'bg-indigo-500/30 border-indigo-500 text-white'
-                            : 'bg-white/5 border-white/5 text-[#a0a0b0] hover:bg-white/10'
+                            ? 'bg-primary/20 border-primary text-primary'
+                            : 'bg-input border-border text-[#a0a0a0] hover:bg-white/10'
                         }`}
                       >
                         {lvl}
@@ -175,10 +175,10 @@ export default function QuizzesPage() {
                       <button
                         key={cnt}
                         onClick={() => setQuestionCount(cnt)}
-                        className={`py-2 rounded-xl text-xs font-bold border transition-colors ${
+                        className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
                           questionCount === cnt
-                            ? 'bg-indigo-500/30 border-indigo-500 text-white'
-                            : 'bg-white/5 border-white/5 text-[#a0a0b0] hover:bg-white/10'
+                            ? 'bg-primary/20 border-primary text-primary'
+                            : 'bg-input border-border text-[#a0a0a0] hover:bg-white/10'
                         }`}
                       >
                         {cnt} Questions
@@ -188,17 +188,17 @@ export default function QuizzesPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
+              <div className="pt-4 border-t border-border flex justify-end gap-3">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl text-sm text-[#a0a0b0] hover:text-white"
+                  className="px-4 py-2 rounded-xl text-sm text-[#a0a0a0] hover:text-white cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   {generating ? 'Generating Quiz...' : 'Generate Quiz'}
@@ -210,18 +210,18 @@ export default function QuizzesPage() {
 
         {/* Active Quiz Card */}
         {activeQuiz && (
-          <div className="bg-black/40 border border-indigo-500/30 rounded-2xl p-6 space-y-6">
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
+            <div className="flex justify-between items-center border-b border-border pb-4">
               <div>
                 <h2 className="text-xl font-bold text-white">{activeQuiz.title}</h2>
-                <p className="text-xs text-[#a0a0b0] uppercase mt-1">Difficulty: {activeQuiz.difficulty}</p>
+                <p className="text-xs text-[#a0a0a0] uppercase mt-1">Difficulty: {activeQuiz.difficulty}</p>
               </div>
               <button
                 onClick={() => {
                   setActiveQuiz(null);
                   setEvaluation(null);
                 }}
-                className="text-xs text-[#a0a0b0] hover:text-white"
+                className="text-xs text-[#a0a0a0] hover:text-white cursor-pointer"
               >
                 Close Quiz
               </button>
@@ -229,8 +229,8 @@ export default function QuizzesPage() {
 
             {evaluation ? (
               <div className="space-y-6">
-                <div className="bg-indigo-500/20 border border-indigo-500/30 p-6 rounded-xl text-center space-y-2">
-                  <Award className="w-12 h-12 text-indigo-400 mx-auto" />
+                <div className="bg-primary/10 border border-primary/20 p-6 rounded-xl text-center space-y-2">
+                  <Award className="w-12 h-12 text-primary mx-auto" />
                   <h3 className="text-2xl font-bold text-white">Quiz Evaluation Complete!</h3>
                   <div className="text-4xl font-extrabold text-emerald-400">
                     {evaluation.score} / {evaluation.totalQuestions} ({evaluation.accuracy}%)
@@ -249,7 +249,7 @@ export default function QuizzesPage() {
                 <div className="space-y-4">
                   <h4 className="text-lg font-bold text-white">Detailed Step-by-Step Explanations:</h4>
                   {evaluation.evaluations.map((ev: any, idx: number) => (
-                    <div key={idx} className="bg-white/5 border border-white/10 p-4 rounded-xl space-y-2">
+                    <div key={idx} className="bg-input border border-border p-4 rounded-xl space-y-2">
                       <div className="flex items-center gap-2 font-bold text-white">
                         {ev.isCorrect ? (
                           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
@@ -258,11 +258,11 @@ export default function QuizzesPage() {
                         )}
                         Q{idx + 1}: {ev.questionText}
                       </div>
-                      <div className="text-sm text-[#a0a0b0]">
+                      <div className="text-sm text-[#a0a0a0]">
                         Selected: <span className="text-white">{ev.selectedAnswer || 'None'}</span> | Correct:{' '}
                         <span className="text-emerald-400">{ev.correctAnswer}</span>
                       </div>
-                      <div className="text-xs bg-black/40 p-3 rounded text-indigo-200">{ev.explanation}</div>
+                      <div className="text-xs bg-background p-3 rounded text-primary/90">{ev.explanation}</div>
                     </div>
                   ))}
                 </div>
@@ -270,7 +270,7 @@ export default function QuizzesPage() {
             ) : (
               <div className="space-y-6">
                 {activeQuiz.questions.map((q: any, idx: number) => (
-                  <div key={q.id || idx} className="bg-white/5 border border-white/10 p-5 rounded-xl space-y-4">
+                  <div key={q.id || idx} className="bg-input border border-border p-5 rounded-xl space-y-4">
                     <h3 className="text-white font-semibold">
                       Q{idx + 1}: {q.question}
                     </h3>
@@ -288,10 +288,10 @@ export default function QuizzesPage() {
                                 [q.id || `q_${idx}`]: optKey,
                               }))
                             }
-                            className={`p-3 rounded-lg border text-left text-sm transition-colors ${
+                            className={`p-3 rounded-lg border text-left text-sm transition-colors cursor-pointer ${
                               isSelected
-                                ? 'bg-indigo-500/30 border-indigo-500 text-white font-medium'
-                                : 'bg-black/30 border-white/5 text-[#a0a0b0] hover:bg-white/10'
+                                ? 'bg-primary/20 border-primary text-primary font-medium'
+                                : 'bg-background border-border text-[#a0a0a0] hover:bg-white/10'
                             }`}
                           >
                             <strong>{optKey}:</strong> {optText}
@@ -304,7 +304,7 @@ export default function QuizzesPage() {
 
                 <button
                   onClick={handleSubmitQuiz}
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-emerald-500/20"
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer"
                 >
                   Submit & Evaluate Quiz
                 </button>
@@ -314,20 +314,20 @@ export default function QuizzesPage() {
         )}
 
         {/* Quizzes List */}
-        <div className="bg-black/20 border border-white/10 rounded-2xl overflow-hidden">
-          <div className="p-6 border-b border-white/10 bg-white/5">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-border bg-input/50">
             <h2 className="text-xl font-bold text-white">Recent Quizzes</h2>
           </div>
           {loading ? (
-            <div className="p-8 text-center text-[#a0a0b0] flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-indigo-400" /> Loading quizzes...
+            <div className="p-8 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" /> Loading quizzes...
             </div>
           ) : quizzes.length === 0 ? (
-            <div className="p-8 text-center text-[#a0a0b0]">
+            <div className="p-8 text-center text-[#a0a0a0]">
               No quizzes generated yet. Click <strong>Generate New Quiz</strong> above!
             </div>
           ) : (
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-border">
               {quizzes.map((quiz, i) => (
                 <div
                   key={quiz.id || i}
@@ -335,7 +335,7 @@ export default function QuizzesPage() {
                 >
                   <div>
                     <h3 className="text-white font-bold text-lg">{quiz.title}</h3>
-                    <p className="text-sm text-[#a0a0b0]">
+                    <p className="text-sm text-[#a0a0a0]">
                       {quiz.questions?.length || 5} Questions • Level: {quiz.difficulty}
                     </p>
                   </div>
@@ -345,7 +345,7 @@ export default function QuizzesPage() {
                       setAnswers({});
                       setEvaluation(null);
                     }}
-                    className="bg-white/5 hover:bg-indigo-500 hover:text-white text-white px-4 py-2 rounded-xl transition-colors text-sm font-medium border border-white/10"
+                    className="bg-input hover:bg-primary hover:text-primary-foreground text-foreground px-4 py-2 rounded-xl transition-colors text-sm font-medium border border-border hover:border-primary cursor-pointer"
                   >
                     Take Quiz
                   </button>

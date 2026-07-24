@@ -84,19 +84,19 @@ export default function TeacherDashboard() {
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Welcome Section */}
-        <div className="bg-gradient-to-br from-indigo-900/40 to-black border border-indigo-500/30 rounded-3xl p-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-3xl p-8 relative overflow-hidden bg-card">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Teacher Command Center 👋</h1>
-              <p className="text-[#a0a0b0] max-w-xl">
+              <h1 className="font-heading text-3xl font-bold text-white mb-2">Teacher Command Center 👋</h1>
+              <p className="text-[#a0a0a0] max-w-xl">
                 Monitor class weak topic heatmaps, track student attendance, and push targeted remedial study materials directly to struggling students' agendas.
               </p>
             </div>
             <button
               onClick={fetchClassroomData}
               disabled={loading}
-              className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shrink-0"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shrink-0 cursor-pointer disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <BrainCircuit className="w-5 h-5" />}
               Refresh Heatmap
@@ -106,23 +106,23 @@ export default function TeacherDashboard() {
 
         {/* Classroom Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-black/20 border border-white/10 rounded-2xl p-6 flex items-center justify-between">
+          <div className="bg-card border border-border shadow-sm rounded-2xl p-6 flex items-center justify-between">
             <div>
-              <p className="text-[#a0a0b0] text-sm">Enrolled Students</p>
+              <p className="text-[#a0a0a0] text-sm">Enrolled Students</p>
               <span className="text-3xl font-bold text-white">{summary.totalStudents}</span>
             </div>
             <div className="bg-blue-500/20 p-3 rounded-xl text-blue-400"><Users className="w-6 h-6" /></div>
           </div>
-          <div className="bg-black/20 border border-white/10 rounded-2xl p-6 flex items-center justify-between">
+          <div className="bg-card border border-border shadow-sm rounded-2xl p-6 flex items-center justify-between">
             <div>
-              <p className="text-[#a0a0b0] text-sm">Class Avg. Mastery</p>
+              <p className="text-[#a0a0a0] text-sm">Class Avg. Mastery</p>
               <span className="text-3xl font-bold text-emerald-400">{summary.averageClassMastery}%</span>
             </div>
             <div className="bg-emerald-500/20 p-3 rounded-xl text-emerald-400"><Target className="w-6 h-6" /></div>
           </div>
-          <div className="bg-black/20 border border-white/10 rounded-2xl p-6 flex items-center justify-between">
+          <div className="bg-card border border-border shadow-sm rounded-2xl p-6 flex items-center justify-between">
             <div>
-              <p className="text-[#a0a0b0] text-sm">Class Avg. Attendance</p>
+              <p className="text-[#a0a0a0] text-sm">Class Avg. Attendance</p>
               <span className="text-3xl font-bold text-white">{summary.averageAttendance}%</span>
             </div>
             <div className="bg-purple-500/20 p-3 rounded-xl text-purple-400"><UserCheck className="w-6 h-6" /></div>
@@ -130,35 +130,35 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Real-Time Weak Topic Heatmap */}
-        <div className="bg-black/20 border border-white/10 rounded-2xl p-6 space-y-4">
-          <div className="flex items-center gap-2 border-b border-white/10 pb-4">
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm">
+          <div className="flex items-center gap-2 border-b border-border pb-4">
             <AlertTriangle className="w-6 h-6 text-amber-400" />
             <h2 className="text-xl font-bold text-white">Classroom Weak Topic Heatmap</h2>
           </div>
 
           {loading ? (
-            <div className="py-8 text-center text-[#a0a0b0] flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-indigo-400" /> Aggregating student topic quiz scores...
+            <div className="py-8 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" /> Aggregating student topic quiz scores...
             </div>
           ) : heatmap.length === 0 ? (
-            <div className="py-6 text-center text-[#a0a0b0]">
+            <div className="py-6 text-center text-[#a0a0a0]">
               No class weak topics detected yet. Once students attempt quizzes, heatmaps will generate automatically!
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {heatmap.map((item: any, idx: number) => (
-                <div key={idx} className="bg-white/5 border border-white/10 p-4 rounded-xl space-y-2">
+                <div key={idx} className="bg-input border border-border p-4 rounded-xl space-y-2 hover:border-primary/40 transition-colors">
                   <div className="flex justify-between items-center">
                     <h3 className="text-white font-bold text-base">{item.topic}</h3>
                     <span className={`text-xs px-2 py-0.5 rounded font-bold uppercase ${item.severity === 'high' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
                       {item.severity} Risk
                     </span>
                   </div>
-                  <div className="flex justify-between text-xs text-[#a0a0b0]">
+                  <div className="flex justify-between text-xs text-[#a0a0a0]">
                     <span>Class Accuracy</span>
                     <span className="text-white font-semibold">{item.averageAccuracy}%</span>
                   </div>
-                  <div className="w-full bg-white/5 rounded-full h-2">
+                  <div className="w-full bg-background rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${item.severity === 'high' ? 'bg-red-500' : 'bg-amber-500'}`}
                       style={{ width: `${item.averageAccuracy}%` }}
@@ -171,14 +171,14 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Student Roster Table & Remediation Push */}
-        <div className="bg-black/20 border border-white/10 rounded-2xl overflow-hidden space-y-4">
-          <div className="p-6 border-b border-white/10 bg-white/5 flex justify-between items-center">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden space-y-4 shadow-sm">
+          <div className="p-6 border-b border-border bg-input/50 flex justify-between items-center">
             <h2 className="text-xl font-bold text-white">Student Roster & Remediation Push</h2>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-[#e0e0e0]">
-              <thead className="bg-white/5 text-xs uppercase text-[#a0a0b0] border-b border-white/10">
+            <table className="w-full text-left text-sm text-foreground">
+              <thead className="bg-input/50 text-xs uppercase text-[#a0a0a0] border-b border-border">
                 <tr>
                   <th className="p-4">Student Name</th>
                   <th className="p-4">Mastery Accuracy</th>
@@ -187,12 +187,12 @@ export default function TeacherDashboard() {
                   <th className="p-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-border">
                 {roster.map((st: any) => (
                   <tr key={st.id} className="hover:bg-white/5 transition-colors">
                     <td className="p-4 font-semibold text-white">
                       {st.name}
-                      <div className="text-xs font-normal text-[#a0a0b0]">{st.email}</div>
+                      <div className="text-xs font-normal text-[#a0a0a0]">{st.email}</div>
                     </td>
                     <td className="p-4 font-bold">{st.masteryScore}%</td>
                     <td className="p-4">{st.attendancePct}%</td>
@@ -208,7 +208,7 @@ export default function TeacherDashboard() {
                           setAssignmentTitle(`Remedial Assignment: ${st.weakTopics[0] || 'Topic Revision'}`);
                           setShowPushModal(true);
                         }}
-                        className="bg-indigo-500/20 hover:bg-indigo-500 hover:text-white text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors"
+                        className="bg-primary/20 hover:bg-primary hover:text-white text-primary border border-primary/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
                       >
                         <Send className="w-3.5 h-3.5" /> Push Remediation Note
                       </button>
@@ -223,12 +223,12 @@ export default function TeacherDashboard() {
         {/* Push Assignment Modal */}
         {showPushModal && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-black/90 border border-indigo-500/40 rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
-              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
+              <div className="flex justify-between items-center border-b border-border pb-4">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Send className="w-5 h-5 text-indigo-400" /> Push Remedial Assignment
+                  <Send className="w-5 h-5 text-primary" /> Push Remedial Assignment
                 </h2>
-                <button onClick={() => setShowPushModal(false)} className="text-[#a0a0b0] hover:text-white">
+                <button onClick={() => setShowPushModal(false)} className="text-[#a0a0a0] hover:text-white cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -240,7 +240,7 @@ export default function TeacherDashboard() {
                     type="text"
                     value={assignmentTitle}
                     onChange={(e) => setAssignmentTitle(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-colors"
                   />
                 </div>
 
@@ -249,7 +249,7 @@ export default function TeacherDashboard() {
                   <select
                     value={selectedNoteId}
                     onChange={(e) => setSelectedNoteId(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-colors"
                   >
                     <option value="">No File attached</option>
                     {notes.map((n) => (
@@ -261,14 +261,14 @@ export default function TeacherDashboard() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
-                <button onClick={() => setShowPushModal(false)} className="px-4 py-2 rounded-xl text-sm text-[#a0a0b0] hover:text-white">
+              <div className="pt-4 border-t border-border flex justify-end gap-3">
+                <button onClick={() => setShowPushModal(false)} className="px-4 py-2 rounded-xl text-sm text-[#a0a0a0] hover:text-white cursor-pointer">
                   Cancel
                 </button>
                 <button
                   onClick={handlePushAssignment}
                   disabled={pushing}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {pushing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   {pushing ? 'Pushing Assignment...' : 'Push to Student Agenda'}

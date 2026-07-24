@@ -62,16 +62,16 @@ const CodeBlock = ({ inline, className, children, ...props }: any) => {
 
   if (inline || !match) {
     return (
-      <code className="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded text-xs font-mono" {...props}>
+      <code className="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-xs font-mono" {...props}>
         {children}
       </code>
     );
   }
 
   return (
-    <div className="my-4 rounded-xl border border-white/10 overflow-hidden bg-[#0d0d15] shadow-2xl">
-      <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10 text-xs text-[#a0a0b0]">
-        <span className="font-mono uppercase font-semibold text-indigo-400 flex items-center gap-1.5">
+    <div className="my-4 rounded-xl border border-border overflow-hidden bg-card shadow-2xl">
+      <div className="flex items-center justify-between px-4 py-2 bg-input/50 border-b border-border text-xs text-[#a0a0a0]">
+        <span className="font-mono uppercase font-semibold text-primary flex items-center gap-1.5">
           <Code2 className="w-3.5 h-3.5" /> {language || 'code'}
         </span>
         <button
@@ -314,31 +314,31 @@ export default function AIChatPage() {
       <div
         className={`transition-all duration-300 ${
           isMaximized
-            ? 'fixed inset-4 z-50 bg-[#1e1e2f] border border-indigo-500/50 rounded-2xl shadow-2xl p-4 flex gap-6'
+            ? 'fixed inset-4 z-50 bg-background border border-primary/50 rounded-2xl shadow-2xl p-4 flex gap-6'
             : 'max-w-7xl mx-auto h-[calc(100vh-8rem)] flex gap-6'
         }`}
       >
         {/* Left Sidebar - Chat Sessions History */}
         <div
-          className={`bg-black/30 rounded-2xl flex flex-col shrink-0 hidden md:flex transition-all duration-300 overflow-hidden ${
-            isConvCollapsed ? 'w-0 opacity-0 border-0' : 'w-80 border border-white/10'
+          className={`bg-card/40 rounded-2xl flex flex-col shrink-0 hidden md:flex transition-all duration-300 overflow-hidden ${
+            isConvCollapsed ? 'w-0 opacity-0 border-0' : 'w-80 border border-border'
           }`}
         >
-          <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5 w-80">
+          <div className="p-4 border-b border-border flex justify-between items-center bg-input/50 w-80">
             <h2 className="text-white font-bold flex items-center gap-2 truncate">
-              <MessageSquare className="w-5 h-5 text-indigo-400 shrink-0" /> Conversations
+              <MessageSquare className="w-5 h-5 text-primary shrink-0" /> Conversations
             </h2>
             <div className="flex items-center gap-1 mx-auto md:mx-0">
               <button
                 onClick={() => createNewSession()}
-                className="bg-indigo-500 hover:bg-indigo-600 text-white p-2 rounded-xl text-xs font-medium flex items-center gap-1 transition-colors"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded-xl text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
                 title="New Chat"
               >
                 <Plus className="w-4 h-4 shrink-0" /> <span>New Chat</span>
               </button>
               <button
                 onClick={() => setIsConvCollapsed(true)}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#a0a0b0] hover:text-white transition-colors"
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#a0a0a0] hover:text-white transition-colors cursor-pointer"
                 title="Hide Conversations"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -353,14 +353,14 @@ export default function AIChatPage() {
                 onClick={() => selectSession(sess.id)}
                 className={`p-3 rounded-xl cursor-pointer border transition-colors flex items-center justify-between group ${
                   activeSessionId === sess.id
-                    ? 'bg-indigo-500/20 border-indigo-500/50 text-white font-medium'
-                    : 'bg-white/5 border-white/5 text-[#a0a0b0] hover:bg-white/10 hover:text-white'
+                    ? 'bg-primary/20 border-primary/50 text-primary font-medium'
+                    : 'bg-input border-border text-[#a0a0a0] hover:bg-white/10 hover:text-white'
                 }`}
               >
                 <div className="truncate pr-2 text-sm">{sess.title}</div>
                 <button
                   onClick={(e) => handleDeleteSession(sess.id, e)}
-                  className="opacity-0 group-hover:opacity-100 text-[#a0a0b0] hover:text-red-400 p-1 transition-all"
+                  className="opacity-0 group-hover:opacity-100 text-[#a0a0a0] hover:text-red-400 p-1 transition-all cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -370,14 +370,14 @@ export default function AIChatPage() {
         </div>
 
         {/* Main Chat Interface */}
-        <div className="flex-1 bg-black/20 border border-white/10 rounded-2xl flex flex-col overflow-hidden relative">
+        <div className="flex-1 bg-card/20 border border-border rounded-2xl flex flex-col overflow-hidden relative shadow-sm">
           {/* Header */}
-          <div className="p-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
+          <div className="p-4 border-b border-border bg-input/50 flex justify-between items-center">
             <div className="flex items-center gap-4">
               {isConvCollapsed && (
                 <button
                   onClick={() => setIsConvCollapsed(false)}
-                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#a0a0b0] hover:text-white transition-colors border border-white/10"
+                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#a0a0a0] hover:text-white transition-colors border border-border cursor-pointer"
                   title="Show Conversations"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -385,11 +385,11 @@ export default function AIChatPage() {
               )}
               <div>
                 <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                  EduBridge Master AI <Sparkles className="w-4 h-4 text-indigo-400" />
+                  EduBridge Master AI <Sparkles className="w-4 h-4 text-primary" />
                 </h1>
-                <p className="text-xs text-[#a0a0b0]">
+                <p className="text-xs text-[#a0a0a0]">
                   Universal LaTeX Math, Python Code & Algorithm Tutor. Type{' '}
-                  <code className="bg-indigo-500/20 text-indigo-300 px-1 py-0.5 rounded">@FileName</code> to target a note.
+                  <code className="bg-primary/20 text-primary px-1 py-0.5 rounded">@FileName</code> to target a note.
                 </p>
               </div>
             </div>
@@ -397,7 +397,7 @@ export default function AIChatPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsMaximized(!isMaximized)}
-                className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-xl border border-white/10 transition-colors"
+                className="bg-input hover:bg-white/10 text-white p-2 rounded-xl border border-border transition-colors cursor-pointer"
                 title={isMaximized ? 'Compress View' : 'Maximise View'}
               >
                 {isMaximized ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
@@ -408,8 +408,8 @@ export default function AIChatPage() {
           {/* Messages Stream */}
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
             {fetchingHistory ? (
-              <div className="text-center py-12 text-[#a0a0b0] flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin text-indigo-400" /> Loading conversation messages...
+              <div className="text-center py-12 text-[#a0a0a0] flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" /> Loading conversation messages...
               </div>
             ) : (
               messages.map((msg, idx) => (
@@ -423,7 +423,7 @@ export default function AIChatPage() {
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg ${
                       msg.sender === 'bot'
-                        ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 border-indigo-400/30 text-white'
+                        ? 'bg-gradient-to-tr from-primary to-primary/80 border-primary/30 text-primary-foreground'
                         : 'bg-gradient-to-tr from-purple-600 to-pink-600 border-purple-400/30 text-white'
                     }`}
                   >
@@ -434,8 +434,8 @@ export default function AIChatPage() {
                   <div
                     className={`p-6 text-sm leading-relaxed rounded-2xl shadow-xl transition-all ${
                       msg.sender === 'bot'
-                        ? 'bg-[#181826] border border-white/10 rounded-tl-sm text-[#e2e8f0] w-full'
-                        : 'bg-indigo-600/30 border border-indigo-500/40 rounded-tr-sm text-white max-w-2xl'
+                        ? 'bg-card border border-border rounded-tl-sm text-[#e2e8f0] w-full'
+                        : 'bg-primary/30 border border-primary/40 rounded-tr-sm text-white max-w-2xl'
                     }`}
                   >
                     {/* Collapsible Reasoning Process (Thought for X s >) for Bot Messages */}
@@ -443,15 +443,15 @@ export default function AIChatPage() {
                       <div className="mb-4">
                         <button
                           onClick={() => setShowThoughtIdx(showThoughtIdx === idx ? null : idx)}
-                          className="flex items-center gap-1.5 text-xs text-[#a0a0b0] hover:text-indigo-300 transition-colors py-1 px-2.5 rounded-lg bg-white/5 border border-white/5"
+                          className="flex items-center gap-1.5 text-xs text-[#a0a0a0] hover:text-primary transition-colors py-1 px-2.5 rounded-lg bg-input/40 border border-border cursor-pointer"
                         >
-                          <BrainCircuit className="w-3.5 h-3.5 text-indigo-400" />
+                          <BrainCircuit className="w-3.5 h-3.5 text-primary" />
                           <span>Thought for {msg.thoughtTime || 4}s</span>
                           {showThoughtIdx === idx ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         </button>
 
                         {showThoughtIdx === idx && (
-                          <div className="mt-2.5 p-3.5 rounded-xl bg-black/40 border border-white/10 text-xs text-[#a0a0b0] space-y-1.5 font-mono leading-relaxed animate-fadeIn">
+                          <div className="mt-2.5 p-3.5 rounded-xl bg-input/40 border border-border text-xs text-[#a0a0a0] space-y-1.5 font-mono leading-relaxed animate-fadeIn">
                             <p>• Analyzed uploaded study materials & query parameters.</p>
                             <p>• Constructed grounded RAG context & LaTeX mathematical formulation.</p>
                             <p>• Formatted output schema with clear markdown tables and syntax-highlighted code blocks.</p>
@@ -468,29 +468,29 @@ export default function AIChatPage() {
                         components={{
                           code: CodeBlock,
                           table: ({ children }) => (
-                            <div className="my-4 overflow-x-auto rounded-xl border border-white/10 bg-black/30 shadow-lg">
+                            <div className="my-4 overflow-x-auto rounded-xl border border-border bg-input/30 shadow-lg">
                               <table className="w-full text-left border-collapse text-xs">
                                 {children}
                               </table>
                             </div>
                           ),
                           th: ({ children }) => (
-                            <th className="bg-white/10 px-4 py-3 border-b border-white/10 font-semibold text-indigo-300 uppercase tracking-wider">
+                            <th className="bg-white/5 px-4 py-3 border-b border-border font-semibold text-primary uppercase tracking-wider">
                               {children}
                             </th>
                           ),
                           td: ({ children }) => (
-                            <td className="px-4 py-3 border-b border-white/5 text-[#cbd5e1]">
+                            <td className="px-4 py-3 border-b border-border/50 text-[#cbd5e1]">
                               {children}
                             </td>
                           ),
                           h1: ({ children }) => (
-                            <h1 className="text-lg font-bold text-white border-b border-white/10 pb-2 mt-6 mb-3">
+                            <h1 className="text-lg font-bold text-white border-b border-border pb-2 mt-6 mb-3">
                               {children}
                             </h1>
                           ),
                           h2: ({ children }) => (
-                            <h2 className="text-base font-bold text-indigo-300 border-b border-white/10 pb-1.5 mt-5 mb-2">
+                            <h2 className="text-base font-bold text-primary border-b border-border pb-1.5 mt-5 mb-2">
                               {children}
                             </h2>
                           ),
@@ -500,7 +500,7 @@ export default function AIChatPage() {
                             </h3>
                           ),
                           blockquote: ({ children }) => (
-                            <blockquote className="border-l-4 border-indigo-500 bg-indigo-500/10 p-3.5 rounded-r-xl my-4 text-indigo-200 text-xs italic">
+                            <blockquote className="border-l-4 border-primary bg-primary/10 p-3.5 rounded-r-xl my-4 text-primary italic text-xs">
                               {children}
                             </blockquote>
                           ),
@@ -512,11 +512,11 @@ export default function AIChatPage() {
 
                     {/* Bottom Action Toolbar for Bot Messages */}
                     {msg.sender === 'bot' && (
-                      <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-[#a0a0b0]">
+                      <div className="mt-5 pt-3 border-t border-border flex items-center justify-between text-xs text-[#a0a0a0]">
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => copyMessageText(idx, msg.text)}
-                            className="flex items-center gap-1.5 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-white/5"
+                            className="flex items-center gap-1.5 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-border cursor-pointer"
                             title="Copy Response"
                           >
                             {copiedMessageIdx === idx ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -526,9 +526,9 @@ export default function AIChatPage() {
                           {msg.sources && msg.sources.length > 0 && (
                             <button
                               onClick={() => setShowSourcesIdx(showSourcesIdx === idx ? null : idx)}
-                              className="flex items-center gap-1.5 hover:text-indigo-300 transition-colors bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-lg border border-indigo-500/20"
+                              className="flex items-center gap-1.5 hover:text-primary transition-colors bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-lg border border-primary/20 cursor-pointer"
                             >
-                              <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+                              <BookOpen className="w-3.5 h-3.5 text-primary" />
                               <span>Sources ({msg.sources.length})</span>
                               {showSourcesIdx === idx ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                             </button>
@@ -539,9 +539,9 @@ export default function AIChatPage() {
 
                     {/* Expandable Grounded Sources Drawer */}
                     {msg.sender === 'bot' && showSourcesIdx === idx && msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-3 p-3 bg-black/40 rounded-xl border border-indigo-500/30 text-xs text-indigo-200 space-y-2 animate-fadeIn">
-                        <div className="font-semibold text-[#a0a0b0] flex items-center gap-1">
-                          <FileText className="w-3.5 h-3.5 text-indigo-400" /> Grounded Source Excerpts:
+                      <div className="mt-3 p-3 bg-input/40 rounded-xl border border-primary/30 text-xs text-primary/80 space-y-2 animate-fadeIn">
+                        <div className="font-semibold text-[#a0a0a0] flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5 text-primary" /> Grounded Source Excerpts:
                         </div>
                         {msg.sources.map((src: any, sIdx: number) => (
                           <div key={sIdx} className="bg-white/5 p-2.5 rounded-lg border border-white/5">
@@ -558,14 +558,14 @@ export default function AIChatPage() {
             {/* Glowing & Pulsing AI "Thinking & Reasoning..." State */}
             {loading && (
               <div className="flex items-start gap-4 max-w-[85%] animate-pulse">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/30 border border-indigo-400 flex items-center justify-center shrink-0 text-indigo-300 shadow-lg shadow-indigo-500/30">
+                <div className="w-10 h-10 rounded-2xl bg-primary/30 border border-primary text-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/30">
                   <BrainCircuit className="w-5 h-5 animate-spin" />
                 </div>
-                <div className="bg-gradient-to-r from-indigo-900/40 via-purple-900/40 to-indigo-900/40 border border-indigo-500/40 rounded-2xl rounded-tl-sm p-5 text-sm text-indigo-200 flex items-center gap-3 shadow-xl w-full">
-                  <Sparkles className="w-5 h-5 text-indigo-400 animate-bounce" />
+                <div className="bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 border border-primary/40 rounded-2xl rounded-tl-sm p-5 text-sm text-primary/80 flex items-center gap-3 shadow-xl w-full">
+                  <Sparkles className="w-5 h-5 text-primary animate-bounce" />
                   <div>
                     <strong className="block text-white font-semibold">Thought for a few seconds...</strong>
-                    <span className="text-xs text-[#a0a0b0]">Synthesizing step-by-step LaTeX math, code derivations, and grounded context</span>
+                    <span className="text-xs text-[#a0a0a0]">Synthesizing step-by-step LaTeX math, code derivations, and grounded context</span>
                   </div>
                 </div>
               </div>
@@ -575,25 +575,25 @@ export default function AIChatPage() {
 
           {/* Mention Auto-Complete Popover */}
           {showMentionMenu && filteredNotesForMention.length > 0 && (
-            <div className="absolute bottom-20 left-6 right-6 bg-black/90 border border-indigo-500/40 rounded-xl p-2 shadow-2xl z-50 max-h-48 overflow-y-auto backdrop-blur-md">
-              <div className="text-xs text-indigo-300 font-semibold px-3 py-1 border-b border-white/10 flex items-center gap-1">
+            <div className="absolute bottom-20 left-6 right-6 bg-card border border-primary/40 rounded-xl p-2 shadow-2xl z-50 max-h-48 overflow-y-auto backdrop-blur-md">
+              <div className="text-xs text-primary font-semibold px-3 py-1 border-b border-border flex items-center gap-1">
                 <AtSign className="w-3.5 h-3.5" /> Tag document for targeted retrieval:
               </div>
               {filteredNotesForMention.map((n) => (
                 <button
                   key={n.id}
                   onClick={() => insertMention(n.title)}
-                  className="w-full text-left px-3 py-2 text-sm text-white hover:bg-indigo-500/30 rounded-lg transition-colors flex items-center justify-between"
+                  className="w-full text-left px-3 py-2 text-sm text-white hover:bg-primary/30 rounded-lg transition-colors flex items-center justify-between cursor-pointer"
                 >
                   <span>📄 {n.title}</span>
-                  <span className="text-xs text-[#a0a0b0] uppercase">{n.fileType}</span>
+                  <span className="text-xs text-[#a0a0a0] uppercase">{n.fileType}</span>
                 </button>
               ))}
             </div>
           )}
 
           {/* Input Form */}
-          <div className="p-4 border-t border-white/10 bg-black/40 backdrop-blur-md">
+          <div className="p-4 border-t border-border bg-card/40 backdrop-blur-md">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -607,12 +607,12 @@ export default function AIChatPage() {
                 onChange={handleInputChange}
                 placeholder="Ask any question or type @NoteName to ground query..."
                 disabled={loading}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-white placeholder-[#a0a0b0] focus:outline-none focus:border-indigo-500/50"
+                className="w-full bg-input border border-border rounded-2xl py-3 px-4 text-white placeholder-[#a0a0a0] focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50"
               />
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white p-3 rounded-xl transition-colors shadow-lg shadow-indigo-500/20 shrink-0"
+                className="bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground p-3 rounded-xl transition-colors shadow-lg shadow-primary/20 shrink-0 cursor-pointer"
               >
                 <Send className="w-5 h-5" />
               </button>

@@ -14,7 +14,6 @@ import {
   Send,
   BarChart2,
   Settings,
-  GraduationCap,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -51,20 +50,18 @@ export default function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
 
   return (
     <div
-      className={`bg-[#1e1e2f] border-r border-white/10 h-screen flex flex-col hidden md:flex fixed left-0 top-0 transition-all duration-300 z-40 overflow-hidden ${
+      className={`bg-card border-r border-border h-screen flex flex-col hidden md:flex fixed left-0 top-0 transition-all duration-300 z-40 overflow-hidden ${
         isCollapsed ? 'w-0 opacity-0 border-0' : 'w-64'
       }`}
     >
       {/* Header with Logo & Toggle Button */}
-      <div className="p-4 flex items-center justify-between border-b border-white/10 w-64">
+      <div className="p-4 flex items-center justify-between border-b border-border w-64">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="bg-indigo-500 p-2 rounded-lg shrink-0">
-            <GraduationCap className="w-6 h-6 text-white" />
-          </div>
+          <div className="bg-[#d9d9d9] w-8 h-8 rounded-lg shrink-0"></div>
           {!isCollapsed && (
             <div className="transition-opacity duration-300">
               <span className="text-xl font-bold tracking-tight text-white block">EduBridge</span>
-              <span className="text-[10px] uppercase font-bold text-indigo-400">
+              <span className="text-[10px] uppercase font-bold text-primary">
                 {isTeacher ? 'Teacher Portal' : 'Student Portal'}
               </span>
             </div>
@@ -73,7 +70,7 @@ export default function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
 
         <button
           onClick={toggleCollapse}
-          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#a0a0b0] hover:text-white transition-colors shrink-0"
+          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#a0a0a0] hover:text-white transition-colors shrink-0"
           title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
           {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
@@ -95,11 +92,11 @@ export default function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
                 isCollapsed ? 'justify-center' : ''
               } ${
                 isActive 
-                  ? 'bg-indigo-500/20 text-indigo-400 font-semibold' 
-                  : 'text-[#a0a0b0] hover:bg-white/5 hover:text-white'
+                  ? 'bg-primary/20 text-primary font-semibold' 
+                  : 'text-[#a0a0a0] hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-indigo-400' : 'text-[#a0a0b0]'}`} />
+              <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-primary' : 'text-[#a0a0a0]'}`} />
               {!isCollapsed && <span className="truncate">{link.name}</span>}
             </Link>
           );
@@ -107,7 +104,7 @@ export default function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
       </div>
 
       {/* Settings Link */}
-      <div className="p-3 border-t border-white/10">
+      <div className="p-3 border-t border-border">
         <Link 
           href="/settings"
           title={isCollapsed ? 'Settings' : undefined}
@@ -115,8 +112,8 @@ export default function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
             isCollapsed ? 'justify-center' : ''
           } ${
             pathname === '/settings'
-              ? 'bg-indigo-500/20 text-indigo-400 font-semibold' 
-              : 'text-[#a0a0b0] hover:bg-white/5 hover:text-white'
+              ? 'bg-primary/20 text-primary font-semibold' 
+              : 'text-[#a0a0a0] hover:bg-white/5 hover:text-white'
           }`}
         >
           <Settings className="w-5 h-5 shrink-0" />

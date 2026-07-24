@@ -23,9 +23,9 @@ export default function Home() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       {/* Optional loading spinner while auth resolves */}
-      <div className="w-8 h-8 border-4 border-[#5A94CE] border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 }

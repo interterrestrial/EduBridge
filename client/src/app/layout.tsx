@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Varela, Hanuman } from "next/font/google";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const varela = Varela({
+  weight: "400",
+  variable: "--font-varela",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const hanuman = Hanuman({
+  weight: ["400", "700", "900"],
+  variable: "--font-hanuman",
   subsets: ["latin"],
 });
 
@@ -27,9 +29,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${varela.variable} ${hanuman.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <GoogleOAuthProvider clientId="105438668399-k5srfr3lr7fvl26on2mi0nqfqt2l4oo4.apps.googleusercontent.com">
           {children}
         </GoogleOAuthProvider>
