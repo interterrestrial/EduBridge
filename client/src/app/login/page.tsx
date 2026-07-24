@@ -5,7 +5,7 @@ import { AxiosError } from 'axios';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, LogIn, GraduationCap } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -57,9 +57,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex bg-background text-foreground font-sans">
       {/* Left Panel */}
       <div className="hidden lg:flex flex-col justify-center items-start w-1/2 p-16 xl:p-24 relative border-r border-border">
-        {/* Logo Box Placeholder */}
-        <div className="w-[300px] h-[300px] bg-[#d9d9d9] rounded-2xl flex items-center justify-center mb-12 shadow-sm">
-          <span className="text-black font-bold text-xl">EduBridge Logo</span>
+        {/* Logo */}
+        <div className="flex items-center gap-4 mb-12">
+          <div className="w-20 h-20 bg-primary/20 rounded-3xl flex items-center justify-center shadow-lg border border-primary/30">
+            <GraduationCap className="w-12 h-12 text-primary" />
+          </div>
+          <span className="font-heading text-4xl font-bold text-white tracking-tight">EduBridge</span>
         </div>
         
         <div className="font-heading text-5xl xl:text-6xl font-bold leading-tight tracking-tight max-w-lg text-[#d4d4d4]">
@@ -80,8 +83,7 @@ export default function LoginPage() {
             onClick={() => handleGoogleLogin()}
             type="button"
             variant="ghost"
-            fullWidth
-            className="bg-[#d9d9d9] hover:bg-[#d9d9d9]/90 text-black mb-6"
+            className="!bg-[#d9d9d9] hover:!bg-[#c0c0c0] !text-black mb-6"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" className="mr-3">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>

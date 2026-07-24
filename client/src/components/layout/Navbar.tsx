@@ -82,13 +82,15 @@ export default function Navbar({ isCollapsed, toggleCollapse }: NavbarProps) {
             </div>
           </div>
           
-          <div className="absolute top-full mt-2 right-6 bg-card border border-border rounded-xl shadow-xl w-48 py-2 hidden group-hover:block">
-             <div className="px-4 py-2 border-b border-border mb-2">
-               <p className="text-sm text-white font-medium truncate">{user?.email}</p>
-             </div>
-             <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors">
-               Sign Out
-             </button>
+          <div className="absolute top-full right-6 pt-2 hidden group-hover:block">
+            <div className="bg-card border border-border rounded-xl shadow-xl w-48 py-2">
+               <div className="px-4 py-2 border-b border-border mb-2">
+                 <p className="text-sm text-white font-medium truncate">{user?.email}</p>
+               </div>
+               <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors cursor-pointer">
+                 Sign Out
+               </button>
+            </div>
           </div>
         </div>
       </div>

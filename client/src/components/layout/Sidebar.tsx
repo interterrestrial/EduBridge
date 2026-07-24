@@ -15,7 +15,8 @@ import {
   BarChart2,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -57,7 +58,9 @@ export default function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
       {/* Header with Logo & Toggle Button */}
       <div className="p-4 flex items-center justify-between border-b border-border w-64">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="bg-[#d9d9d9] w-8 h-8 rounded-lg shrink-0"></div>
+          <div className="bg-primary/20 w-8 h-8 rounded-lg shrink-0 flex items-center justify-center border border-primary/30 shadow-sm">
+            <GraduationCap className="w-5 h-5 text-primary" />
+          </div>
           {!isCollapsed && (
             <div className="transition-opacity duration-300">
               <span className="text-xl font-bold tracking-tight text-white block">EduBridge</span>
