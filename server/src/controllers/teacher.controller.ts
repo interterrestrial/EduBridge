@@ -90,3 +90,107 @@ export const pushMaterialToStudent = asyncHandler(async (req: AuthRequest, res: 
 
   res.status(201).json({ message: 'Assignment pushed directly to student agenda!', assignment });
 });
+
+/**
+ * Lists all notes across all students (for the teacher push-assignment modal dropdown).
+ * In a single-classroom model, teachers can push any student's note to any other student.
+ */
+export const getAllNotes = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+
+  const notes = await prisma.note.findMany({
+    select: {
+      id: true,
+      title: true,
+      fileType: true,
+      createdAt: true,
+      student: { select: { id: true, name: true } },
+      folder: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  res.status(200).json({ notes });
+});
+
+/**
+ * Lists all quizzes across all students (for the teacher push-assignment modal — quiz push).
+ */
+export const getAllQuizzes = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+
+  const quizzes = await prisma.quiz.findMany({
+    select: {
+      id: true,
+      title: true,
+      difficulty: true,
+      createdAt: true,
+      student: { select: { id: true, name: true } },
+      _count: { select: { attempts: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  res.status(200).json({ quizzes });
+});
+
+/**
+ * Fetches detailed analytics for a specific student (teacher viewing one student's profile).
+ * Includes quiz attempts with weak topics, flashcard count, and study profile.
+ */
+export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+
+  const studentId = req.params.studentId as string;
+  if (!studentId) throw new ApiError(400, 'studentId is required');
+
+  const student = await prisma.user.findFirst({
+    where: { id: studentId, role: 'student' },
+    include: {
+      studentProfile: true,
+      quizAttempts: {
+        orderBy: { createdAt: 'desc' },
+        include: { quiz: { select: { id: true, title: true, difficulty: true } } },
+      },
+      notes: { select: { id: true, title: true, createdAt: true }, orderBy: { createdAt: 'desc' } },
+      flashcards: { select: { id: true, topic: true, type: true } },
+      attendance: { orderBy: { date: 'desc' } },
+    },
+  });
+
+  if (!student) throw new ApiError(404, 'Student not found');
+
+  const attempts = student.quizAttempts;
+  const accuracies = attempts.map((a) => a.accuracy);
+  const avgAccuracy = accuracies.length > 0 ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length) : 0;
+  const weakTopics = Array.from(new Set(attempts.flatMap((a) => JSON.parse(a.weakTopicsJson || '[]'))));
+  const presentCount = student.attendance.filter((r) => r.status === 'present').length;
+  const attendancePct = student.attendance.length > 0 ? Math.round((presentCount / student.attendance.length) * 100) : 100;
+
+  res.status(200).json({
+    student: {
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      masteryScore: avgAccuracy,
+      attendancePct,
+      status: avgAccuracy >= 80 ? 'Excelling' : avgAccuracy >= 60 ? 'On Track' : 'Needs Support',
+      weakTopics,
+      profile: student.studentProfile,
+      quizAttempts: attempts.map((a) => ({
+        id: a.id,
+        quizId: a.quizId,
+        quizTitle: a.quiz?.title || 'Deleted Quiz',
+        difficulty: a.quiz?.difficulty || 'medium',
+        score: a.score,
+        totalQuestions: a.totalQuestions,
+        accuracy: a.accuracy,
+        weakTopics: JSON.parse(a.weakTopicsJson || '[]'),
+        createdAt: a.createdAt,
+      })),
+      noteCount: student.notes.length,
+      flashcardCount: student.flashcards.length,
+      notes: student.notes,
+    },
+  });
+});

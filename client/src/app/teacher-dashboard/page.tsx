@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Send,
   FileText,
+  HelpCircle,
   X
 } from 'lucide-react';
 import api from '../../lib/api';
@@ -22,25 +23,30 @@ export default function TeacherDashboard() {
   const { user } = useAuth();
   const [heatmapData, setHeatmapData] = useState<any>(null);
   const [notes, setNotes] = useState<any[]>([]);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Push Assignment Modal State
   const [showPushModal, setShowPushModal] = useState(false);
   const [targetStudentId, setTargetStudentId] = useState<string>('');
   const [assignmentTitle, setAssignmentTitle] = useState<string>('');
+  const [pushType, setPushType] = useState<'note' | 'quiz'>('note');
   const [selectedNoteId, setSelectedNoteId] = useState<string>('');
+  const [selectedQuizId, setSelectedQuizId] = useState<string>('');
   const [pushing, setPushing] = useState(false);
 
   const fetchClassroomData = async () => {
     try {
       setLoading(true);
-      const [heatmapRes, notesRes] = await Promise.all([
+      const [heatmapRes, notesRes, quizzesRes] = await Promise.all([
         api.get('/teacher/heatmap'),
-        api.get('/notes/student/student_1'), // Fetch available notes for push
+        api.get('/teacher/notes'),
+        api.get('/teacher/quizzes'),
       ]);
 
       setHeatmapData(heatmapRes.data);
       setNotes(notesRes.data.notes || []);
+      setQuizzes(quizzesRes.data.quizzes || []);
     } catch (err) {
       console.error('Error fetching teacher data:', err);
     } finally {
@@ -54,22 +60,30 @@ export default function TeacherDashboard() {
 
   const handlePushAssignment = async () => {
     if (!targetStudentId || !assignmentTitle) return;
+    const noteId = pushType === 'note' ? selectedNoteId : undefined;
+    const quizId = pushType === 'quiz' ? selectedQuizId : undefined;
+    if (!noteId && !quizId) {
+      alert('Please select a note or quiz to push.');
+      return;
+    }
 
     try {
       setPushing(true);
       await api.post('/teacher/push-assignment', {
-        teacherId: user?.id || 'teacher_1',
         studentId: targetStudentId,
         title: assignmentTitle,
-        noteId: selectedNoteId || undefined,
+        noteId: noteId || undefined,
+        quizId: quizId || undefined,
       });
 
       alert('Remedial material successfully pushed directly to student agenda!');
       setShowPushModal(false);
       setAssignmentTitle('');
+      setSelectedNoteId('');
+      setSelectedQuizId('');
     } catch (err: any) {
       console.error('Push assignment error:', err);
-      alert('Failed to push assignment.');
+      alert(err?.response?.data?.error || 'Failed to push assignment.');
     } finally {
       setPushing(false);
     }
@@ -206,11 +220,14 @@ export default function TeacherDashboard() {
                         onClick={() => {
                           setTargetStudentId(st.id);
                           setAssignmentTitle(`Remedial Assignment: ${st.weakTopics[0] || 'Topic Revision'}`);
+                          setPushType('note');
+                          setSelectedNoteId('');
+                          setSelectedQuizId('');
                           setShowPushModal(true);
                         }}
                         className="bg-indigo-500/20 hover:bg-indigo-500 hover:text-white text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors"
                       >
-                        <Send className="w-3.5 h-3.5" /> Push Remediation Note
+                        <Send className="w-3.5 h-3.5" /> Push Remediation
                       </button>
                     </td>
                   </tr>
@@ -244,21 +261,68 @@ export default function TeacherDashboard() {
                   />
                 </div>
 
+                {/* Push Type Toggle */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Attach Study Note Document</label>
-                  <select
-                    value={selectedNoteId}
-                    onChange={(e) => setSelectedNoteId(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="">No File attached</option>
-                    {notes.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        📄 {n.title}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium text-white mb-2">Material Type</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPushType('note')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${pushType === 'note' ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-black/60 text-[#a0a0b0] border-white/10 hover:border-indigo-500/50'}`}
+                    >
+                      <FileText className="w-4 h-4" /> Study Note
+                    </button>
+                    <button
+                      onClick={() => setPushType('quiz')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${pushType === 'quiz' ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-black/60 text-[#a0a0b0] border-white/10 hover:border-indigo-500/50'}`}
+                    >
+                      <HelpCircle className="w-4 h-4" /> Practice Quiz
+                    </button>
+                  </div>
                 </div>
+
+                {/* Note Selector */}
+                {pushType === 'note' && (
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Select Study Note</label>
+                    <select
+                      value={selectedNoteId}
+                      onChange={(e) => setSelectedNoteId(e.target.value)}
+                      className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="">Select a note...</option>
+                      {notes.map((n) => (
+                        <option key={n.id} value={n.id}>
+                          📄 {n.title} {n.student ? `(${n.student.name})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {notes.length === 0 && (
+                      <p className="text-xs text-[#a0a0b0] mt-1">No notes available yet. Students need to upload notes first.</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Quiz Selector */}
+                {pushType === 'quiz' && (
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Select Practice Quiz</label>
+                    <select
+                      value={selectedQuizId}
+                      onChange={(e) => setSelectedQuizId(e.target.value)}
+                      className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="">Select a quiz...</option>
+                      {quizzes.map((q) => (
+                        <option key={q.id} value={q.id}>
+                          📝 {q.title} ({q.difficulty}) {q.student ? `— ${q.student.name}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {quizzes.length === 0 && (
+                      <p className="text-xs text-[#a0a0b0] mt-1">No quizzes available yet. Students need to generate quizzes first.</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
