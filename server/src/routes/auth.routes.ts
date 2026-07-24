@@ -11,3 +11,4 @@ router.post('/update-role', authenticate, updateRole);
 router.get('/me', authenticate, getMe);
 
 export default router;
+// Note: `asyncHandler` is applied inside the controller exports, so the route file stays clean.

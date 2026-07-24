@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import prisma from '../prisma';
 
 const TEST_DB = path.join(__dirname, '..', '..', 'prisma', 'test.db');
 const TEST_DB_URL = `file:${TEST_DB}`;
@@ -28,6 +29,9 @@ beforeAll(() => {
   });
 });
 
-afterAll(() => {
+afterAll(async () => {
+  // Release the SQLite file handle before unlinking — on Windows the open
+  // Prisma connection otherwise keeps test.db locked (EBUSY).
+  await prisma.$disconnect();
   if (fs.existsSync(TEST_DB)) fs.unlinkSync(TEST_DB);
 });
