@@ -18,8 +18,9 @@ export class ChunkingService {
     baseMetadata: { studentId: string; documentId: string; documentTitle: string }
   ): Promise<Document[]> {
     const splitDocs = await this.splitter.splitDocuments(documents);
+    const validDocs = splitDocs.filter(doc => doc.pageContent.trim().length > 0);
 
-    return splitDocs.map((doc, index) => ({
+    return validDocs.map((doc, index) => ({
       pageContent: doc.pageContent,
       metadata: {
         ...doc.metadata,

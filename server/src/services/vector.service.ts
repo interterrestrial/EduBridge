@@ -27,18 +27,31 @@ export class VectorService {
 
     const indexFile = path.join(indexPath, 'faiss.index');
 
+    let store: FaissStore | null = null;
     if (fs.existsSync(indexFile)) {
-      const store = await FaissStore.load(
+      store = await FaissStore.load(
         indexPath,
-        this.embeddingService.getModel()
+        this.embeddingService
       );
-      await store.addDocuments(chunks);
-      await store.save(indexPath);
-    } else {
-      const store = await FaissStore.fromDocuments(
-        chunks,
-        this.embeddingService.getModel()
-      );
+    }
+
+    // Process in smaller batches to avoid silent API limit failures returning empty embeddings
+    const batchSize = 10;
+    for (let i = 0; i < chunks.length; i += batchSize) {
+      const batch = chunks.slice(i, i + batchSize);
+      
+      // If store hasn't been loaded or initialized yet
+      if (!store) {
+        store = await FaissStore.fromDocuments(
+          batch,
+          this.embeddingService
+        );
+      } else {
+        await store.addDocuments(batch);
+      }
+    }
+
+    if (store) {
       await store.save(indexPath);
     }
   }
@@ -58,7 +71,7 @@ export class VectorService {
 
     const store = await FaissStore.load(
       indexPath,
-      this.embeddingService.getModel()
+      this.embeddingService
     );
 
     const filter = noteId ? (doc: Document) => doc.metadata.documentId === noteId : undefined;
