@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks/useAuth';
 import { 
@@ -13,11 +14,14 @@ import {
   Clock,
   CheckCircle2,
   Calendar,
-  Play,
-  Loader2,
+  Sparkles,
   Award,
+  Play,
   Copy,
   Check,
+  Loader2,
+  BookOpen,
+  UserCheck,
   Users,
   GraduationCap
 } from 'lucide-react';
@@ -29,6 +33,7 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const studentId = user?.id || 'student_1';
   const router = useRouter();
+  const pathname = usePathname();
 
   const [agenda, setAgenda] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -46,8 +51,14 @@ export default function StudentDashboard() {
   useEffect(() => {
     if (studentId) {
       fetchDashboardData();
+      const interval = setInterval(fetchDashboardData, 10000);
+      window.addEventListener('focus', fetchDashboardData);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('focus', fetchDashboardData);
+      };
     }
-  }, [studentId]);
+  }, [studentId, pathname]);
 
   const fetchDashboardData = async () => {
     try {

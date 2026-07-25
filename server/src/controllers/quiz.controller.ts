@@ -51,6 +51,16 @@ export const submitQuiz = asyncHandler(async (req: AuthRequest, res: Response) =
     data: { quizId, studentId, score: result.score, totalQuestions: result.totalQuestions, accuracy: result.accuracy, weakTopicsJson: JSON.stringify(result.weakTopics) },
   });
 
+  // Unconditionally mark any pending teacher push assignment for this quiz and student as completed!
+  try {
+    await prisma.teacherPushAssignment.updateMany({
+      where: { quizId, studentId, status: 'pending' },
+      data: { status: 'completed' },
+    });
+  } catch (err) {
+    console.error('Failed to update push assignment status:', err);
+  }
+
   try {
     const student = await prisma.user.findUnique({ where: { id: studentId }, select: { name: true } });
     const studentName = student?.name || 'A student';
@@ -72,25 +82,23 @@ export const submitQuiz = asyncHandler(async (req: AuthRequest, res: Response) =
       mappings.forEach((m) => teacherIds.add(m.teacherId));
     }
 
-    if (teacherIds.size > 0) {
-      await prisma.notification.createMany({
-        data: Array.from(teacherIds).map((tid) => ({
-          userId: tid,
-          title: 'Assessment Completed',
-          message: `${studentName} completed quiz "${quiz.title}" with a score of ${result.score}/${result.totalQuestions} (${result.accuracy}%)!`,
-          type: 'TASK_COMPLETED',
-          link: '/teacher-dashboard',
-        })),
-      });
-      if (pushAsgns.length > 0) {
-        await prisma.teacherPushAssignment.updateMany({
-          where: { quizId, studentId },
-          data: { status: 'completed' },
+    for (const tid of teacherIds) {
+      try {
+        await prisma.notification.create({
+          data: {
+            userId: tid,
+            title: 'Assessment Completed',
+            message: `${studentName} completed quiz "${quiz.title}" with a score of ${result.score}/${result.totalQuestions} (${result.accuracy}%)!`,
+            type: 'TASK_COMPLETED',
+            link: '/teacher-dashboard',
+          },
         });
+      } catch (e) {
+        console.error(`Failed notification for teacher ${tid}:`, e);
       }
     }
   } catch (notifErr) {
-    console.error('Failed to send quiz completion notification:', notifErr);
+    console.error('Failed in quiz completion notification flow:', notifErr);
   }
 
   res.status(200).json({ attemptId: attempt.id, score: result.score, totalQuestions: result.totalQuestions, accuracy: result.accuracy, evaluations: result.evaluations, weakTopics: result.weakTopics, strongTopics: result.strongTopics });
