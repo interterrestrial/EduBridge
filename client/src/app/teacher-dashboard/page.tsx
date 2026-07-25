@@ -27,27 +27,12 @@ export default function TeacherDashboard() {
 
   // Classroom Enrollment state
   const [showEnrollModal, setShowEnrollModal] = useState(false);
-  const [unassignedStudents, setUnassignedStudents] = useState<{ id: string; name: string; email: string; studentCode?: string }[]>([]);
-  const [loadingUnassigned, setLoadingUnassigned] = useState(false);
   const [enrollEmail, setEnrollEmail] = useState('');
   const [enrolling, setEnrolling] = useState(false);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
 
-  const fetchUnassigned = async () => {
-    try {
-      setLoadingUnassigned(true);
-      const res = await api.get('/teacher/students/unassigned');
-      setUnassignedStudents(res.data.students || []);
-    } catch (err) {
-      console.error('Error fetching unassigned students:', err);
-    } finally {
-      setLoadingUnassigned(false);
-    }
-  };
-
   const handleOpenEnrollModal = () => {
     setShowEnrollModal(true);
-    fetchUnassigned();
   };
 
   const handleEnrollStudent = async (studentId?: string, inputVal?: string) => {
@@ -69,7 +54,6 @@ export default function TeacherDashboard() {
       await api.post('/teacher/students', payload);
       if (inputVal) setEnrollEmail('');
       await fetchClassroomData();
-      await fetchUnassigned();
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to enroll student');
     } finally {
@@ -346,44 +330,6 @@ export default function TeacherDashboard() {
                   </button>
                 </div>
                 <p className="text-[11px] text-[#a0a0a0]">Ask your students for their unique Enrollment Code (found on their dashboard) or enter their registered email address.</p>
-              </div>
-
-              {/* Unassigned student list */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold uppercase text-[#a0a0a0]">Available Students ({unassignedStudents.length})</label>
-                  <button onClick={fetchUnassigned} className="text-xs text-primary hover:underline">Refresh List</button>
-                </div>
-                {loadingUnassigned ? (
-                  <div className="py-8 text-center text-[#a0a0a0] flex items-center justify-center gap-2 text-sm">
-                    <Loader2 className="w-4 h-4 animate-spin text-primary" /> Loading unassigned students...
-                  </div>
-                ) : unassignedStudents.length === 0 ? (
-                  <div className="py-6 text-center bg-input/20 border border-border rounded-xl p-4 text-xs text-[#a0a0a0]">
-                    All registered students are already enrolled in your classroom!
-                  </div>
-                ) : (
-                  <div className="max-h-60 overflow-y-auto space-y-2 pr-1 divide-y divide-border/50">
-                    {unassignedStudents.map((st) => (
-                      <div key={st.id} className="flex items-center justify-between pt-2 first:pt-0">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-white">{st.name}</p>
-                            <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-mono font-bold">{st.studentCode || '—'}</span>
-                          </div>
-                          <p className="text-xs text-[#a0a0a0]">{st.email}</p>
-                        </div>
-                        <button
-                          onClick={() => handleEnrollStudent(st.id)}
-                          disabled={enrollingId === st.id}
-                          className="bg-white/10 hover:bg-primary hover:text-white text-foreground px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 disabled:opacity-50 cursor-pointer"
-                        >
-                          {enrollingId === st.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />} Enroll
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <div className="flex justify-end pt-2 border-t border-border">
