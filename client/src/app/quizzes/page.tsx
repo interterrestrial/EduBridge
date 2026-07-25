@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { Plus, CheckCircle2, XCircle, Loader2, Award, AlertTriangle, FileText, X } from 'lucide-react';
+import { Plus, CheckCircle2, XCircle, Loader2, Award, AlertTriangle, FileText, X, Send } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 
 export default function QuizzesPage() {
   const { user } = useAuth();
   const studentId = user?.id || 'student_1';
+  const router = useRouter();
 
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
@@ -108,8 +110,14 @@ export default function QuizzesPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="font-heading text-3xl font-bold text-white">AI Quizzes</h1>
-            <p className="text-[#a0a0a0]">Generate targeted practice assessments from specific uploaded notes.</p>
+            <h1 className="font-heading text-3xl font-bold text-white">
+              {user?.role === 'teacher' ? 'Classroom AI Quizzes' : 'AI Quizzes'}
+            </h1>
+            <p className="text-[#a0a0a0]">
+              {user?.role === 'teacher'
+                ? 'Generate practice assessments from study materials and assign them directly to your classroom.'
+                : 'Generate targeted practice assessments from specific uploaded notes.'}
+            </p>
           </div>
           <button
             onClick={() => setShowModal(true)}
@@ -336,19 +344,32 @@ export default function QuizzesPage() {
                   <div>
                     <h3 className="text-white font-bold text-lg">{quiz.title}</h3>
                     <p className="text-sm text-[#a0a0a0]">
-                      {quiz.questions?.length || 5} Questions • Level: {quiz.difficulty}
+                      {quiz.questions?.length || 5} Questions • Level: {quiz.difficulty}{' '}
+                      {quiz.student && (
+                        <span>• By: {quiz.student.id === user?.id ? 'You' : quiz.student.name}</span>
+                      )}
                     </p>
                   </div>
-                  <button
-                    onClick={() => {
-                      setActiveQuiz(quiz);
-                      setAnswers({});
-                      setEvaluation(null);
-                    }}
-                    className="bg-input hover:bg-primary hover:text-primary-foreground text-foreground px-4 py-2 rounded-xl transition-colors text-sm font-medium border border-border hover:border-primary cursor-pointer"
-                  >
-                    Take Quiz
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        setActiveQuiz(quiz);
+                        setAnswers({});
+                        setEvaluation(null);
+                      }}
+                      className="bg-input hover:bg-primary hover:text-primary-foreground text-foreground px-4 py-2 rounded-xl transition-colors text-sm font-medium border border-border hover:border-primary cursor-pointer"
+                    >
+                      Take Quiz
+                    </button>
+                    {user?.role === 'teacher' && (
+                      <button
+                        onClick={() => router.push(`/teacher-push?quizId=${quiz.id}&quizTitle=${encodeURIComponent(quiz.title)}`)}
+                        className="bg-emerald-500/10 hover:bg-emerald-500 hover:text-white text-emerald-400 px-4 py-2 rounded-xl transition-colors text-sm font-medium border border-emerald-500/20 flex items-center gap-2 cursor-pointer"
+                      >
+                        <Send className="w-4 h-4" /> Assign to Classroom
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

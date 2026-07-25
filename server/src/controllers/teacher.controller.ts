@@ -96,6 +96,37 @@ export const pushMaterialToStudent = asyncHandler(async (req: AuthRequest, res: 
   throwIfMissing({ studentId, title });
   if (!noteId && !quizId) throw new ApiError(400, 'Either noteId or quizId is required');
 
+  if (studentId === 'ALL') {
+    const students = await prisma.user.findMany({
+      where: {
+        role: 'student',
+        teachersMapped: { some: { teacherId } },
+      },
+    });
+    if (students.length === 0) throw new ApiError(404, 'No students enrolled in your classroom yet');
+
+    const assignments = await Promise.all(
+      students.map((student) =>
+        prisma.teacherPushAssignment.create({
+          data: {
+            teacherId,
+            studentId: student.id,
+            title,
+            noteId: noteId || null,
+            quizId: quizId || null,
+            dueDate: dueDate || 'End of Week',
+            status: 'pending',
+          },
+          include: { note: true, quiz: true },
+        })
+      )
+    );
+    return res.status(201).json({
+      message: `Assignment successfully pushed to all ${students.length} students in your classroom!`,
+      assignments,
+    });
+  }
+
   // Verify the student exists and is mapped to this teacher
   const student = await prisma.user.findFirst({
     where: {
@@ -163,9 +194,10 @@ export const getAllNotes = asyncHandler(async (req: AuthRequest, res: Response) 
 
   const notes = await prisma.note.findMany({
     where: {
-      student: {
-        teachersMapped: { some: { teacherId } },
-      },
+      OR: [
+        { studentId: teacherId },
+        { student: { teachersMapped: { some: { teacherId } } } },
+      ],
     },
     select: {
       id: true,
@@ -190,9 +222,10 @@ export const getAllQuizzes = asyncHandler(async (req: AuthRequest, res: Response
 
   const quizzes = await prisma.quiz.findMany({
     where: {
-      student: {
-        teachersMapped: { some: { teacherId } },
-      },
+      OR: [
+        { studentId: teacherId },
+        { student: { teachersMapped: { some: { teacherId } } } },
+      ],
     },
     select: {
       id: true,

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { FileText, UploadCloud, Search, Filter, MoreVertical, BrainCircuit, Loader2, CheckCircle2 } from 'lucide-react';
+import { FileText, UploadCloud, Search, Filter, MoreVertical, BrainCircuit, Loader2, CheckCircle2, Send } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 
@@ -81,8 +81,14 @@ export default function NotesPage() {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="font-heading text-3xl font-bold text-white">My Notes</h1>
-            <p className="text-[#a0a0a0]">Upload, organize, and chat with your study materials.</p>
+            <h1 className="font-heading text-3xl font-bold text-white">
+              {user?.role === 'teacher' ? 'Classroom Notes & Materials' : 'My Notes'}
+            </h1>
+            <p className="text-[#a0a0a0]">
+              {user?.role === 'teacher'
+                ? 'Upload teacher study notes, view classroom materials, and push assignments to students.'
+                : 'Upload, organize, and chat with your study materials.'}
+            </p>
           </div>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -146,16 +152,26 @@ export default function NotesPage() {
                     <h3 className="text-white font-medium text-lg leading-tight mb-2 line-clamp-2">{note.title}</h3>
                     <div className="flex items-center justify-between text-xs text-[#a0a0a0] mb-4">
                       <span>{new Date(note.createdAt).toLocaleDateString()}</span>
-                      <span>FAISS Vector Indexed</span>
+                      <span>{note.student ? (note.student.id === user?.id ? 'Uploaded by You' : `By: ${note.student.name}`) : 'FAISS Vector Indexed'}</span>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => router.push(`/ai-chat?noteId=${note.id}`)}
-                    className="w-full bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary border border-primary/20 rounded-lg py-2 flex items-center justify-center gap-2 transition-colors text-sm font-medium cursor-pointer"
-                  >
-                    <BrainCircuit className="w-4 h-4" /> Chat with AI
-                  </button>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <button
+                      onClick={() => router.push(`/ai-chat?noteId=${note.id}`)}
+                      className="w-full bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary border border-primary/20 rounded-lg py-2 flex items-center justify-center gap-2 transition-colors text-sm font-medium cursor-pointer"
+                    >
+                      <BrainCircuit className="w-4 h-4" /> Chat with AI
+                    </button>
+                    {user?.role === 'teacher' && (
+                      <button
+                        onClick={() => router.push(`/teacher-push?noteId=${note.id}&noteTitle=${encodeURIComponent(note.title)}`)}
+                        className="w-full bg-emerald-500/10 hover:bg-emerald-500 hover:text-white text-emerald-400 border border-emerald-500/20 rounded-lg py-2 flex items-center justify-center gap-2 transition-colors text-sm font-medium cursor-pointer"
+                      >
+                        <Send className="w-4 h-4" /> Assign to Classroom
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

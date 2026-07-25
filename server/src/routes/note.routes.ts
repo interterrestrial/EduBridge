@@ -6,7 +6,7 @@ import { upload } from '../middleware/upload.middleware';
 
 const router = Router();
 
-router.use(authenticate, requireRole('student'));
+router.use(authenticate, requireRole('student', 'teacher'));
 
 router.post('/upload', upload.single('file'), uploadNote);
 router.get('/student/:studentId', getNotes);

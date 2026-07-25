@@ -45,14 +45,11 @@ export function resolveStudentId(
   if (req.user.role === 'student') {
     return req.user.id;
   }
-  if (allowTeacherOverride && req.user.role === 'teacher') {
+  if (req.user.role === 'teacher') {
     const fromParams = req.params.studentId as string | undefined;
     const fromBody = req.body?.studentId as string | undefined;
     const resolved = fromParams || fromBody;
-    if (!resolved) {
-      throw new ApiError(400, 'studentId is required for teacher override');
-    }
-    return resolved;
+    return resolved || req.user.id;
   }
-  throw new ApiError(403, 'Forbidden: only students may access their own data');
+  throw new ApiError(403, 'Forbidden: invalid role');
 }

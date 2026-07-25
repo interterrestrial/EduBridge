@@ -47,9 +47,22 @@ export const uploadNote = asyncHandler(async (req: AuthRequest, res: Response) =
 
 export const getNotes = asyncHandler(async (req: AuthRequest, res: Response) => {
   const studentId = resolveStudentId(req);
+  if (req.user?.role === 'teacher' && studentId === req.user.id) {
+    const notes = await prisma.note.findMany({
+      where: {
+        OR: [
+          { studentId: req.user.id },
+          { student: { teachersMapped: { some: { teacherId: req.user.id } } } },
+        ],
+      },
+      include: { folder: true, student: { select: { id: true, name: true, role: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return res.status(200).json({ notes });
+  }
   const notes = await prisma.note.findMany({
     where: { studentId },
-    include: { folder: true },
+    include: { folder: true, student: { select: { id: true, name: true, role: true } } },
     orderBy: { createdAt: 'desc' },
   });
   res.status(200).json({ notes });

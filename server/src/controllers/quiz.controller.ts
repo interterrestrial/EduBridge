@@ -46,7 +46,21 @@ export const submitQuiz = asyncHandler(async (req: AuthRequest, res: Response) =
 
 export const getQuizzes = asyncHandler(async (req: AuthRequest, res: Response) => {
   const studentId = resolveStudentId(req);
-  const quizzes = await prisma.quiz.findMany({ where: { studentId }, orderBy: { createdAt: 'desc' }, include: { attempts: true } });
-  const formatted = quizzes.map((q) => ({ id: q.id, title: q.title, difficulty: q.difficulty, questions: JSON.parse(q.questionsJson), attemptCount: q.attempts.length, createdAt: q.createdAt }));
+  if (req.user?.role === 'teacher' && studentId === req.user.id) {
+    const quizzes = await prisma.quiz.findMany({
+      where: {
+        OR: [
+          { studentId: req.user.id },
+          { student: { teachersMapped: { some: { teacherId: req.user.id } } } },
+        ],
+      },
+      include: { attempts: true, student: { select: { id: true, name: true, role: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    const formatted = quizzes.map((q) => ({ id: q.id, title: q.title, difficulty: q.difficulty, questions: JSON.parse(q.questionsJson), attemptCount: q.attempts.length, createdAt: q.createdAt, student: q.student }));
+    return res.status(200).json({ quizzes: formatted });
+  }
+  const quizzes = await prisma.quiz.findMany({ where: { studentId }, orderBy: { createdAt: 'desc' }, include: { attempts: true, student: { select: { id: true, name: true, role: true } } } });
+  const formatted = quizzes.map((q) => ({ id: q.id, title: q.title, difficulty: q.difficulty, questions: JSON.parse(q.questionsJson), attemptCount: q.attempts.length, createdAt: q.createdAt, student: q.student }));
   res.status(200).json({ quizzes: formatted });
 });

@@ -41,6 +41,10 @@ function TeacherPushInner() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const preselectedStudentId = searchParams.get('studentId') || '';
+  const preselectedNoteId = searchParams.get('noteId') || '';
+  const preselectedNoteTitle = searchParams.get('noteTitle') || '';
+  const preselectedQuizId = searchParams.get('quizId') || '';
+  const preselectedQuizTitle = searchParams.get('quizTitle') || '';
 
   const [students, setStudents] = useState<Student[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
@@ -81,7 +85,7 @@ function TeacherPushInner() {
     fetchData();
   }, []);
 
-  // Deep-link: preselect student from query param
+  // Deep-link: preselect student/note/quiz from query param
   useEffect(() => {
     if (preselectedStudentId && students.length > 0) {
       setSelectedStudentId(preselectedStudentId);
@@ -90,7 +94,23 @@ function TeacherPushInner() {
         setAssignmentTitle(`Remedial Assignment: ${student.weakTopics[0] || 'Topic Revision'}`);
       }
     }
-  }, [preselectedStudentId, students]);
+    if (preselectedNoteId && notes.length > 0) {
+      setSelectedStudentId('ALL');
+      setPushType('note');
+      setSelectedNoteId(preselectedNoteId);
+      if (preselectedNoteTitle) {
+        setAssignmentTitle(`Study Material: ${preselectedNoteTitle}`);
+      }
+    }
+    if (preselectedQuizId && quizzes.length > 0) {
+      setSelectedStudentId('ALL');
+      setPushType('quiz');
+      setSelectedQuizId(preselectedQuizId);
+      if (preselectedQuizTitle) {
+        setAssignmentTitle(`Class Assessment: ${preselectedQuizTitle}`);
+      }
+    }
+  }, [preselectedStudentId, preselectedNoteId, preselectedQuizId, students, notes, quizzes]);
 
   const handlePush = async () => {
     if (!selectedStudentId || !assignmentTitle) {
@@ -113,7 +133,10 @@ function TeacherPushInner() {
         quizId: quizId || undefined,
       });
 
-      alert('Remedial material successfully pushed to student agenda!');
+      const successMsg = selectedStudentId === 'ALL'
+        ? 'Assignment successfully pushed to all classroom students!'
+        : 'Remedial material successfully pushed to student agenda!';
+      alert(successMsg);
       setAssignmentTitle('');
       setSelectedNoteId('');
       setSelectedQuizId('');
@@ -169,12 +192,19 @@ function TeacherPushInner() {
                   value={selectedStudentId}
                   onChange={(e) => {
                     setSelectedStudentId(e.target.value);
+                    if (e.target.value === 'ALL') {
+                      if (!assignmentTitle || assignmentTitle.startsWith('Remedial Assignment:')) {
+                        setAssignmentTitle('Classroom Assignment / Practice Material');
+                      }
+                      return;
+                    }
                     const s = students.find((st) => st.id === e.target.value);
                     if (s) setAssignmentTitle(`Remedial Assignment: ${s.weakTopics[0] || 'Topic Revision'}`);
                   }}
                   className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
                 >
                   <option value="">Select a student...</option>
+                  <option value="ALL">✨ All Students (Entire Classroom) ✨</option>
                   {students.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} — {s.masteryScore}% mastery
@@ -182,6 +212,14 @@ function TeacherPushInner() {
                   ))}
                 </select>
               </div>
+
+              {/* All Students Quick Info */}
+              {selectedStudentId === 'ALL' && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-emerald-300 text-sm flex items-center gap-2">
+                  <Users className="w-5 h-5 shrink-0" />
+                  <span>This assignment will be pushed to all <strong>{students.length} students</strong> in your classroom.</span>
+                </div>
+              )}
 
               {/* Student Quick Info */}
               {selectedStudent && (
