@@ -146,7 +146,7 @@ export default function StudentDashboard() {
               ) : (
                 user.teachersMapped.map((mapping: any, idx: number) => {
                   const teacherName = mapping?.teacher?.name || 'Professor';
-                  const subject = mapping?.teacher?.teacherProfile?.subject || mapping?.teacher?.teacherProfile?.department || 'General Curriculum';
+                  const subject = mapping?.subject || mapping?.teacher?.teacherProfile?.subject || mapping?.teacher?.teacherProfile?.department || 'General Curriculum';
                   return (
                     <div key={idx} className="bg-input border border-border rounded-xl p-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -187,7 +187,7 @@ export default function StudentDashboard() {
             </div>
           ) : agenda.length === 0 ? (
             <div className="py-6 text-center text-[#a0a0a0]">
-              No study tasks scheduled for today. Create your <Link href="/timetable" className="text-primary underline">AI Timetable</Link> to get started!
+              No pending teacher assignments for today. Check out your <Link href="/timetable" className="text-primary underline">AI Timetable</Link> or <Link href="/notes" className="text-primary underline">Notes</Link> to start studying!
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -229,30 +229,30 @@ export default function StudentDashboard() {
           <div className="bg-card border border-border rounded-2xl p-6 flex flex-col justify-between shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <div className="bg-blue-500/20 p-3 rounded-xl text-blue-400"><Award className="w-6 h-6" /></div>
-              <span className="text-2xl font-bold text-white">{stats?.readinessScore || 78}%</span>
+              <span className="text-2xl font-bold text-white">{stats?.readinessScore ?? 0}%</span>
             </div>
             <p className="text-[#a0a0a0] text-sm">Exam Readiness Score</p>
           </div>
           <div className="bg-card border border-border rounded-2xl p-6 flex flex-col justify-between shadow-sm">
             <div className="flex justify-between items-start mb-4">
-              <div className="bg-purple-500/20 p-3 rounded-xl text-purple-400"><Bot className="w-6 h-6" /></div>
-              <span className="text-2xl font-bold text-white">{stats?.aiChatSessions || 0}</span>
+              <div className="bg-emerald-500/20 p-3 rounded-xl text-emerald-400"><Layers className="w-6 h-6" /></div>
+              <span className="text-2xl font-bold text-white">{stats?.masteryScore ?? 0}%</span>
             </div>
-            <p className="text-[#a0a0a0] text-sm">AI Conversations</p>
+            <p className="text-[#a0a0a0] text-sm">Blended Mastery Score</p>
           </div>
           <div className="bg-card border border-border rounded-2xl p-6 flex flex-col justify-between shadow-sm">
             <div className="flex justify-between items-start mb-4">
-              <div className="bg-orange-500/20 p-3 rounded-xl text-orange-400"><Layers className="w-6 h-6" /></div>
-              <span className="text-2xl font-bold text-white">{stats?.flashcardsGenerated || 0}</span>
+              <div className="bg-purple-500/20 p-3 rounded-xl text-purple-400"><HelpCircle className="w-6 h-6" /></div>
+              <span className="text-2xl font-bold text-white">{stats?.quizAccuracy ?? 0}%</span>
             </div>
-            <p className="text-[#a0a0a0] text-sm">Flashcards Generated</p>
+            <p className="text-[#a0a0a0] text-sm">Quiz Practice Accuracy</p>
           </div>
           <div className="bg-card border border-border rounded-2xl p-6 flex flex-col justify-between shadow-sm">
             <div className="flex justify-between items-start mb-4">
-              <div className="bg-emerald-500/20 p-3 rounded-xl text-emerald-400"><HelpCircle className="w-6 h-6" /></div>
-              <span className="text-2xl font-bold text-white">{stats?.masteryScore || 80}%</span>
+              <div className="bg-orange-500/20 p-3 rounded-xl text-orange-400"><Award className="w-6 h-6" /></div>
+              <span className="text-2xl font-bold text-white">{stats?.examAverage ?? 0}%</span>
             </div>
-            <p className="text-[#a0a0a0] text-sm">Quiz Mastery Accuracy</p>
+            <p className="text-[#a0a0a0] text-sm">Graded Exam Average</p>
           </div>
         </div>
 

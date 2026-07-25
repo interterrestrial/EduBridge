@@ -28,6 +28,7 @@ export default function TeacherDashboard() {
   // Classroom Enrollment state
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [enrollEmail, setEnrollEmail] = useState('');
+  const [enrollSubject, setEnrollSubject] = useState('');
   const [enrolling, setEnrolling] = useState(false);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
 
@@ -41,6 +42,9 @@ export default function TeacherDashboard() {
       else setEnrolling(true);
 
       const payload: any = {};
+      if (enrollSubject.trim()) {
+        payload.subject = enrollSubject.trim();
+      }
       if (studentId) {
         payload.studentId = studentId;
       } else if (inputVal) {
@@ -52,7 +56,10 @@ export default function TeacherDashboard() {
       }
 
       await api.post('/teacher/students', payload);
-      if (inputVal) setEnrollEmail('');
+      if (inputVal) {
+        setEnrollEmail('');
+        setEnrollSubject('');
+      }
       await fetchClassroomData();
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to enroll student');
@@ -88,7 +95,7 @@ export default function TeacherDashboard() {
     fetchClassroomData();
   }, []);
 
-  const summary = heatmapData?.summary || { totalStudents: 1, averageClassMastery: 80, averageAttendance: 90 };
+  const summary = heatmapData?.summary || { totalStudents: 0, averageClassMastery: 0, averageAttendance: 0 };
   const heatmap = heatmapData?.heatmap || [];
   const roster = heatmapData?.studentRoster || [];
 
@@ -311,25 +318,39 @@ export default function TeacherDashboard() {
               </div>
 
               {/* Enroll by code or email */}
-              <div className="space-y-3 bg-input/50 p-4 rounded-xl border border-border">
-                <label className="text-xs font-bold uppercase text-[#a0a0a0] block">Enroll by Student Code or Email Address</label>
-                <div className="flex gap-2">
+              <div className="space-y-4 bg-input/50 p-4 rounded-xl border border-border">
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#a0a0a0] block mb-1.5">Subject / Course Name</label>
                   <input
                     type="text"
-                    placeholder="EB-100001 or student@edubridge.edu"
-                    value={enrollEmail}
-                    onChange={(e) => setEnrollEmail(e.target.value)}
-                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-primary"
+                    placeholder={user?.teacherProfile?.subject || user?.teacherProfile?.department || "Computer Science 101"}
+                    value={enrollSubject}
+                    onChange={(e) => setEnrollSubject(e.target.value)}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
                   />
-                  <button
-                    onClick={() => handleEnrollStudent(undefined, enrollEmail)}
-                    disabled={!enrollEmail.trim() || enrolling}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5 shrink-0 cursor-pointer"
-                  >
-                    {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} Enroll
-                  </button>
+                  <p className="text-[11px] text-[#a0a0a0] mt-1">Specify what subject or course this student is enrolling for (leave blank to use your default subject).</p>
                 </div>
-                <p className="text-[11px] text-[#a0a0a0]">Ask your students for their unique Enrollment Code (found on their dashboard) or enter their registered email address.</p>
+
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#a0a0a0] block mb-1.5">Student Code or Email Address</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="EB-100001 or student@edubridge.edu"
+                      value={enrollEmail}
+                      onChange={(e) => setEnrollEmail(e.target.value)}
+                      className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-primary"
+                    />
+                    <button
+                      onClick={() => handleEnrollStudent(undefined, enrollEmail)}
+                      disabled={!enrollEmail.trim() || enrolling}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                      {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} Enroll
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#a0a0a0] mt-1">Ask your students for their unique Enrollment Code (found on their dashboard) or enter their registered email address.</p>
+                </div>
               </div>
 
               <div className="flex justify-end pt-2 border-t border-border">

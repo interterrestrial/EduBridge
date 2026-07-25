@@ -36,14 +36,14 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
       : 0;
 
     // Blended mastery: 60% exam + 40% quiz
-    const masteryScore = Math.round(0.6 * examPct + 0.4 * quizAccuracy);
+    const masteryScore = examScores.length > 0 ? Math.round(0.6 * examPct + 0.4 * quizAccuracy) : quizAccuracy;
 
     // Gap: positive = high quiz practice but low exam (surface practice)
     const gap = quizAccuracy - examPct;
     const gapStatus = gap > 20 ? 'Surface Practice' : gap >= 0 ? 'Aligned' : 'Exam Strong';
 
     const presentCount = student.attendance.filter((r) => r.status === 'present').length;
-    const attendancePct = student.attendance.length > 0 ? Math.round((presentCount / student.attendance.length) * 100) : 100;
+    const attendancePct = student.attendance.length > 0 ? Math.round((presentCount / student.attendance.length) * 100) : 0;
     const weakTopics = Array.from(new Set(attempts.flatMap((a) => JSON.parse(a.weakTopicsJson || '[]'))));
 
     studentRoster.push({
@@ -248,7 +248,7 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
   const quizAccuracy = accuracies.length > 0 ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length) : 0;
   const weakTopics = Array.from(new Set(attempts.flatMap((a) => JSON.parse(a.weakTopicsJson || '[]'))));
   const presentCount = student.attendance.filter((r) => r.status === 'present').length;
-  const attendancePct = student.attendance.length > 0 ? Math.round((presentCount / student.attendance.length) * 100) : 100;
+  const attendancePct = student.attendance.length > 0 ? Math.round((presentCount / student.attendance.length) * 100) : 0;
 
   // Exam average percentage (mirrors getClassroomHeatmap examPct with length guard)
   const examScores = student.examScores;
@@ -257,7 +257,7 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
     : 0;
 
   // Blended mastery: 60% exam + 40% quiz (aligned with getClassroomHeatmap)
-  const masteryScore = Math.round(0.6 * examAverage + 0.4 * quizAccuracy);
+  const masteryScore = examScores.length > 0 ? Math.round(0.6 * examAverage + 0.4 * quizAccuracy) : quizAccuracy;
 
   // Gap indicator: positive gap = high quiz practice but low exam performance (surface practice)
   const gap = quizAccuracy - examAverage;
@@ -335,7 +335,7 @@ export const getUnassignedStudents = asyncHandler(async (req: AuthRequest, res: 
 export const addStudentToClassroom = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
   const teacherId = req.user.id;
-  const { studentId, email, studentCode } = req.body;
+  const { studentId, email, studentCode, subject } = req.body;
 
   if (!studentId && !email && !studentCode) throw new ApiError(400, 'studentCode, email, or studentId is required');
 
@@ -359,10 +359,16 @@ export const addStudentToClassroom = asyncHandler(async (req: AuthRequest, res: 
     if (!studentById) throw new ApiError(404, 'Student account not found');
   }
 
+  const teacherUser = await prisma.user.findUnique({
+    where: { id: teacherId },
+    include: { teacherProfile: true },
+  });
+  const subjectStr = subject ? String(subject).trim() : (teacherUser?.teacherProfile?.subject || teacherUser?.teacherProfile?.department || 'General Curriculum');
+
   const mapping = await prisma.teacherStudent.upsert({
     where: { teacherId_studentId: { teacherId, studentId: targetId } },
-    update: {},
-    create: { teacherId, studentId: targetId },
+    update: { subject: subjectStr },
+    create: { teacherId, studentId: targetId, subject: subjectStr },
   });
 
   res.status(201).json({ message: 'Student enrolled in your classroom!', mapping });

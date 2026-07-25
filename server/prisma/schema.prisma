@@ -262,6 +262,7 @@ model TeacherStudent {
   teacher   User     @relation("TeacherStudents", fields: [teacherId], references: [id], onDelete: Cascade)
   studentId String
   student   User     @relation("StudentTeachers", fields: [studentId], references: [id], onDelete: Cascade)
+  subject   String?
   createdAt DateTime @default(now())
 
   @@unique([teacherId, studentId])

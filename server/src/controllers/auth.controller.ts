@@ -274,3 +274,60 @@ export const updateRole = asyncHandler(async (req: AuthRequest, res: Response) =
   const jwtToken = generateToken({ id: updated.id, email: updated.email, role: updated.role });
   res.status(200).json({ message: 'Role updated successfully', token: jwtToken, user: sanitizeUser(updated) });
 });
+
+export const updateProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) throw new ApiError(401, 'Unauthorized');
+  const { name, institution, course, semester, learningPreference, organization, department, subject, specialization } = req.body;
+
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (!user) throw new ApiError(404, 'User not found');
+
+  const updateData: any = {};
+  if (name !== undefined) updateData.name = String(name).trim();
+
+  if (user.role === 'student') {
+    const studentData: any = {};
+    if (institution !== undefined) studentData.institution = institution ? String(institution).trim() : null;
+    if (course !== undefined) studentData.course = course ? String(course).trim() : null;
+    if (semester !== undefined) studentData.semester = semester ? String(semester).trim() : null;
+    if (learningPreference !== undefined) studentData.learningPreference = learningPreference ? String(learningPreference).trim() : null;
+
+    updateData.studentProfile = {
+      upsert: {
+        create: studentData,
+        update: studentData,
+      },
+    };
+  } else if (user.role === 'teacher') {
+    const teacherData: any = {};
+    if (organization !== undefined) teacherData.organization = organization ? String(organization).trim() : null;
+    if (department !== undefined) teacherData.department = department ? String(department).trim() : null;
+    if (subject !== undefined) teacherData.subject = subject ? String(subject).trim() : null;
+    if (specialization !== undefined) teacherData.specialization = specialization ? String(specialization).trim() : null;
+
+    updateData.teacherProfile = {
+      upsert: {
+        create: teacherData,
+        update: teacherData,
+      },
+    };
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: updateData,
+    include: {
+      studentProfile: true,
+      teacherProfile: true,
+      teachersMapped: {
+        include: {
+          teacher: {
+            select: { id: true, name: true, email: true, teacherProfile: true },
+          },
+        },
+      },
+    },
+  });
+
+  res.status(200).json({ message: 'Profile updated successfully', user: sanitizeUser(updated) });
+});

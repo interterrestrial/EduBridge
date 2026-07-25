@@ -107,7 +107,7 @@ async function main() {
   ];
 
   console.log('   Generating exams and scores...');
-  const allStudents = await prisma.user.findMany({ where: { role: 'student' }, select: { id: true } });
+  const allStudents = await prisma.user.findMany({ where: { role: 'student', email: { endsWith: '@edubridge.edu' } }, select: { id: true } });
 
   for (const examData of EXAMS) {
     const exam = await prisma.exam.create({

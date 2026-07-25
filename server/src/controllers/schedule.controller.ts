@@ -47,21 +47,10 @@ export const generateSchedule = asyncHandler(async (req: AuthRequest, res: Respo
 
 export const getTodayAgenda = asyncHandler(async (req: AuthRequest, res: Response) => {
   const studentId = resolveStudentId(req);
-  const latestSchedule = await prisma.studySchedule.findFirst({ where: { studentId }, orderBy: { createdAt: 'desc' } });
   const pushAssignments = await prisma.teacherPushAssignment.findMany({
     where: { studentId, status: 'pending' },
     include: { note: true, quiz: true },
   });
-
-  let blocks: any[] = [];
-  if (latestSchedule) {
-    blocks = (JSON.parse(latestSchedule.scheduleJson || '[]')).slice(0, 2);
-  } else {
-    blocks = [
-      { day: 'Today', date: 'Today', title: 'RAG Study Session', focusTopic: 'Review Uploaded Notes', actionType: 'read_note', durationMinutes: 30 },
-      { day: 'Today', date: 'Today', title: 'Active Recall Check', focusTopic: 'Weak Topic Quiz', actionType: 'take_quiz', durationMinutes: 15 },
-    ];
-  }
 
   const teacherTasks = pushAssignments.map((p) => ({
     id: p.id,
@@ -73,7 +62,7 @@ export const getTodayAgenda = asyncHandler(async (req: AuthRequest, res: Respons
     isTeacherPush: true,
   }));
 
-  res.status(200).json({ agenda: [...teacherTasks, ...blocks] });
+  res.status(200).json({ agenda: teacherTasks });
 });
 
 export const getStudentSchedules = asyncHandler(async (req: AuthRequest, res: Response) => {
