@@ -38,6 +38,27 @@ export default function TeacherDashboard() {
   const [editAvgValue, setEditAvgValue] = useState<string>('');
   const [savingAvg, setSavingAvg] = useState(false);
 
+  const [customSubjectsList] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('edubridge_custom_subjects');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+
+  const availableSubjects = Array.from(
+    new Set([
+      user?.teacherProfile?.subject,
+      user?.teacherProfile?.department,
+      ...customSubjectsList,
+      ...(heatmapData?.students || []).map((s: any) => s.subject),
+      'Data Preprocessing & Analytics',
+      'Design & Analysis of Algorithms',
+      'Database Systems & Indexing',
+      'Computer Science 101',
+    ].filter((s): s is string => Boolean(s) && s.trim().length > 0))
+  );
+
   const handleOpenEnrollModal = () => {
     setShowEnrollModal(true);
   };
@@ -414,11 +435,17 @@ export default function TeacherDashboard() {
                   <label className="text-xs font-bold uppercase text-[#a0a0a0] block mb-1.5">Subject / Course Name</label>
                   <input
                     type="text"
+                    list="enroll-subjects-list"
                     placeholder={user?.teacherProfile?.subject || user?.teacherProfile?.department || "Computer Science 101"}
                     value={enrollSubject}
                     onChange={(e) => setEnrollSubject(e.target.value)}
                     className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
                   />
+                  <datalist id="enroll-subjects-list">
+                    {availableSubjects.map((s, idx) => (
+                      <option key={idx} value={s} />
+                    ))}
+                  </datalist>
                   <p className="text-[11px] text-[#a0a0a0] mt-1">Specify what subject or course this student is enrolling for (leave blank to use your default subject).</p>
                 </div>
 

@@ -68,6 +68,55 @@ export default function TeacherExams() {
   const [newExamDate, setNewExamDate] = useState('');
   const [creating, setCreating] = useState(false);
 
+  // Subject management & filtering state
+  const [isCustomSubject, setIsCustomSubject] = useState(false);
+  const [showCreateSubjectModal, setShowCreateSubjectModal] = useState(false);
+  const [customSubjectInput, setCustomSubjectInput] = useState('');
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('ALL');
+  const [customSubjectsList, setCustomSubjectsList] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('edubridge_custom_subjects');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+
+  const defaultSubjects = [
+    'Data Preprocessing & Analytics',
+    'Design & Analysis of Algorithms',
+    'Database Systems & Indexing',
+    'Computer Science 101',
+  ];
+
+  const availableSubjects = Array.from(
+    new Set([
+      user?.teacherProfile?.subject,
+      user?.teacherProfile?.department,
+      ...customSubjectsList,
+      ...exams.map((e) => e.subject),
+      ...defaultSubjects,
+    ].filter((s): s is string => Boolean(s) && s.trim().length > 0))
+  );
+
+  const handleSaveNewSubject = () => {
+    const trimmed = customSubjectInput.trim();
+    if (!trimmed) {
+      alert('Please enter a subject name.');
+      return;
+    }
+    setCustomSubjectsList((prev) => {
+      const updated = Array.from(new Set([...prev, trimmed]));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('edubridge_custom_subjects', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    setNewSubject(trimmed);
+    setCustomSubjectInput('');
+    setShowCreateSubjectModal(false);
+    setShowCreateModal(true);
+  };
+
   // Mastery breakdown
   const [needsIntervention, setNeedsIntervention] = useState<{ name: string; email: string; avgPct: number }[]>([]);
 
@@ -152,6 +201,7 @@ export default function TeacherExams() {
         examDate: newExamDate,
       });
       setShowCreateModal(false);
+      setIsCustomSubject(false);
       setNewTitle('');
       setNewSubject('');
       setNewMaxMarks('');
@@ -218,6 +268,12 @@ export default function TeacherExams() {
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BarChart2 className="w-4 h-4" />}
                 Refresh
+              </button>
+              <button
+                onClick={() => setShowCreateSubjectModal(true)}
+                className="bg-white/10 hover:bg-white/20 border border-white/10 text-white px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg cursor-pointer"
+              >
+                <Plus className="w-4 h-4 text-primary" /> Create Subject
               </button>
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -330,6 +386,39 @@ export default function TeacherExams() {
         {/* Exam Cards Grid */}
         {!selectedExam && (
           <>
+            {/* Subject Filter Bar */}
+            {availableSubjects.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-2 scrollbar-none">
+                <button
+                  onClick={() => setSelectedSubjectFilter('ALL')}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    selectedSubjectFilter === 'ALL'
+                      ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                      : 'bg-card border border-border text-[#a0a0a0] hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  All Subjects ({exams.length})
+                </button>
+                {availableSubjects.map((subj) => {
+                  const count = exams.filter((e) => e.subject === subj).length;
+                  if (count === 0 && selectedSubjectFilter !== subj && !customSubjectsList.includes(subj)) return null;
+                  return (
+                    <button
+                      key={subj}
+                      onClick={() => setSelectedSubjectFilter(subj)}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                        selectedSubjectFilter === subj
+                          ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                          : 'bg-card border border-border text-[#a0a0a0] hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {subj} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {loading ? (
               <div className="py-16 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
                 <Loader2 className="w-5 h-5 animate-spin text-primary" /> Loading exams...
@@ -344,7 +433,9 @@ export default function TeacherExams() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {exams.map((exam) => (
+                {exams
+                  .filter((exam) => selectedSubjectFilter === 'ALL' || exam.subject === selectedSubjectFilter)
+                  .map((exam) => (
                   <div
                     key={exam.id}
                     onClick={() => handleSelectExam(exam)}
@@ -425,17 +516,61 @@ export default function TeacherExams() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Subject</label>
-                  <select
-                    value={newSubject}
-                    onChange={(e) => setNewSubject(e.target.value)}
-                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
-                  >
-                    <option value="">Select a subject...</option>
-                    <option value="Data Preprocessing & Analytics">Data Preprocessing & Analytics</option>
-                    <option value="Design & Analysis of Algorithms">Design & Analysis of Algorithms</option>
-                    <option value="Database Systems & Indexing">Database Systems & Indexing</option>
-                  </select>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-white">Subject</label>
+                    {!isCustomSubject ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomSubject(true);
+                          setNewSubject('');
+                        }}
+                        className="text-xs text-primary hover:underline font-medium cursor-pointer"
+                      >
+                        + Type Custom Subject
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomSubject(false);
+                          setNewSubject('');
+                        }}
+                        className="text-xs text-[#a0a0a0] hover:text-white underline font-medium cursor-pointer"
+                      >
+                        ← Select from list
+                      </button>
+                    )}
+                  </div>
+                  {!isCustomSubject ? (
+                    <select
+                      value={newSubject}
+                      onChange={(e) => {
+                        if (e.target.value === '__CREATE_NEW__') {
+                          setIsCustomSubject(true);
+                          setNewSubject('');
+                        } else {
+                          setNewSubject(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
+                    >
+                      <option value="">Select a subject...</option>
+                      {availableSubjects.map((s, idx) => (
+                        <option key={idx} value={s}>{s}</option>
+                      ))}
+                      <option value="__CREATE_NEW__">➕ Create / Type New Subject...</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={newSubject}
+                      onChange={(e) => setNewSubject(e.target.value)}
+                      placeholder="e.g., Physics 101, Advanced Calculus, Chemistry..."
+                      autoFocus
+                      className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -462,7 +597,13 @@ export default function TeacherExams() {
               </div>
 
               <div className="pt-4 border-t border-border flex justify-end gap-3">
-                <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-xl text-sm text-[#a0a0a0] hover:text-white cursor-pointer">
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setIsCustomSubject(false);
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm text-[#a0a0a0] hover:text-white cursor-pointer"
+                >
                   Cancel
                 </button>
                 <button
@@ -472,6 +613,53 @@ export default function TeacherExams() {
                 >
                   {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   {creating ? 'Creating...' : 'Create Exam'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Subject Modal */}
+        {showCreateSubjectModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
+              <div className="flex justify-between items-center border-b border-border pb-4">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-primary" /> Create New Subject
+                </h2>
+                <button onClick={() => setShowCreateSubjectModal(false)} className="text-[#a0a0a0] hover:text-white cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Subject / Course Name</label>
+                <input
+                  type="text"
+                  value={customSubjectInput}
+                  onChange={(e) => setCustomSubjectInput(e.target.value)}
+                  placeholder="e.g., Physics 101, Organic Chemistry, World History..."
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveNewSubject()}
+                  className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
+                />
+                <p className="text-xs text-[#a0a0a0] mt-2">
+                  Once created, you can select this subject when creating exams and managing student performance.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-border flex justify-end gap-3">
+                <button
+                  onClick={() => setShowCreateSubjectModal(false)}
+                  className="px-4 py-2 rounded-xl text-sm text-[#a0a0a0] hover:text-white cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveNewSubject}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Save & Create Exam
                 </button>
               </div>
             </div>

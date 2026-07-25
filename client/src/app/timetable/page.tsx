@@ -20,6 +20,28 @@ export default function TimetablePage() {
   const [dailyHours, setDailyHours] = useState(2);
   const [showModal, setShowModal] = useState(false);
 
+  const [customSubjectsList] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('edubridge_custom_subjects');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+
+  const availableSubjects = Array.from(
+    new Set([
+      user?.studentProfile?.course,
+      user?.studentProfile?.department,
+      ...(user?.studentProfile?.mappings || []).map((m: any) => m.subject || m.teacher?.teacherProfile?.subject),
+      ...customSubjectsList,
+      ...schedules.map((s: any) => s.subject),
+      'Data Preprocessing & Analytics',
+      'Design & Analysis of Algorithms',
+      'Database Systems & Indexing',
+      'Computer Science 101',
+    ].filter((s): s is string => Boolean(s) && s.trim().length > 0))
+  );
+
   const fetchSchedules = async () => {
     try {
       setLoading(true);
@@ -101,11 +123,17 @@ export default function TimetablePage() {
                   <label className="block text-sm font-medium text-white mb-2">Target Subject / Course</label>
                   <input
                     type="text"
+                    list="timetable-subjects-list"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="e.g. Computer Science, Physics"
                     className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50"
                   />
+                  <datalist id="timetable-subjects-list">
+                    {availableSubjects.map((s, idx) => (
+                      <option key={idx} value={s} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div>
