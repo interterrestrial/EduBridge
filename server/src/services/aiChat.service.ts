@@ -12,13 +12,16 @@ export class AiChatService {
   async askTutor(
     studentId: string,
     question: string,
-    noteId?: string
+    noteId?: string,
+    noteIds?: string[]
   ): Promise<ChatResponse> {
     return await this.ragService.executeQuery(
       studentId,
       question,
       TUTOR_SYSTEM_PROMPT,
-      noteId
+      noteId,
+      8,
+      noteIds
     );
   }
 }

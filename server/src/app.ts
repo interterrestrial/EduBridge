@@ -1,22 +1,35 @@
-import express, { Application, Request, Response } from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.routes';
 import noteRoutes from './routes/note.routes';
+import folderRoutes from './routes/folder.routes';
 import aiRoutes from './routes/ai.routes';
 import quizRoutes from './routes/quiz.routes';
 import flashcardRoutes from './routes/flashcard.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import scheduleRoutes from './routes/schedule.routes';
 import teacherRoutes from './routes/teacher.routes';
+import healthRoutes from './routes/health.routes';
+import { ApiError } from './utils/apiError';
 
 const app: Application = express();
 
 app.use(cors());
 app.use(express.json());
 
+// Lightweight request logger (dev only)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+  });
+}
+
 // API Routes
+app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
+app.use('/api/folders', folderRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/flashcards', flashcardRoutes);
@@ -24,8 +37,23 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/teacher', teacherRoutes);
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('EduBridge API with AI Engine & Personalization is running 🚀');
+app.get('/', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', service: 'EduBridge API', time: new Date().toISOString() });
+});
+
+// 404 for unmatched routes
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Central error handler — converts ApiError to its status, everything else to 500
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  if (err instanceof ApiError) {
+    res.status(err.statusCode).json({ error: err.message });
+    return;
+  }
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 export default app;

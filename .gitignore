@@ -112,6 +112,11 @@ Thumbs.db
 *.swp
 *.swo
 
+# Internal tooling (local only)
+.agents/
+.claude/
+skill-observations/
+
 # Prisma
 server/prisma/*.db
 server/prisma/*.db-journal

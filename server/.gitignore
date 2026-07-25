@@ -1,0 +1,22 @@
+# Secrets — NEVER commit
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+
+# Database (dev.db at server root + prisma/*.db)
+dev.db
+dev.db-journal
+prisma/*.db
+prisma/test.db
+prisma/*.db-journal
+
+# Vector store & uploads (runtime artifacts)
+vector_db/
+uploads/
+
+# Node
+node_modules/
+*.log

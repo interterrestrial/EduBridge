@@ -60,7 +60,8 @@ export class VectorService {
     studentId: string,
     query: string,
     topK: number = AI_CONFIG.DEFAULT_TOP_K,
-    noteId?: string
+    noteId?: string,
+    noteIds?: string[]
   ): Promise<Document[]> {
     const indexPath = this.getIndexPath(studentId);
     const indexFile = path.join(indexPath, 'faiss.index');
@@ -74,8 +75,21 @@ export class VectorService {
       this.embeddingService
     );
 
-    const filter = noteId ? (doc: Document) => doc.metadata.documentId === noteId : undefined;
-    return await store.similaritySearch(query, topK, filter);
+    let filter: ((doc: Document) => boolean) | undefined = undefined;
+
+    if (noteIds && noteIds.length > 0) {
+      const set = new Set(noteIds);
+      filter = (doc: Document) => set.has(doc.metadata.documentId);
+    } else if (noteId) {
+      filter = (doc: Document) => doc.metadata.documentId === noteId;
+    }
+
+    try {
+      return await store.similaritySearch(query, topK, filter);
+    } catch (err: any) {
+      console.warn('[VectorService] FAISS similarity search warning (empty or invalid index):', err?.message || err);
+      return [];
+    }
   }
 
   async deleteStudentIndex(studentId: string): Promise<void> {

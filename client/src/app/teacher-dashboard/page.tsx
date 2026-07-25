@@ -3,44 +3,30 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks/useAuth';
-import { 
-  Users, 
-  TrendingUp, 
+import {
+  Users,
+  TrendingUp,
   AlertTriangle,
   BrainCircuit,
   UserCheck,
   Target,
   Loader2,
-  CheckCircle2,
   Send,
-  FileText,
-  X
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [heatmapData, setHeatmapData] = useState<any>(null);
-  const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Push Assignment Modal State
-  const [showPushModal, setShowPushModal] = useState(false);
-  const [targetStudentId, setTargetStudentId] = useState<string>('');
-  const [assignmentTitle, setAssignmentTitle] = useState<string>('');
-  const [selectedNoteId, setSelectedNoteId] = useState<string>('');
-  const [pushing, setPushing] = useState(false);
+  const router = useRouter();
 
   const fetchClassroomData = async () => {
     try {
       setLoading(true);
-      const [heatmapRes, notesRes] = await Promise.all([
-        api.get('/teacher/heatmap'),
-        api.get('/notes/student/student_1'), // Fetch available notes for push
-      ]);
-
+      const heatmapRes = await api.get('/teacher/heatmap');
       setHeatmapData(heatmapRes.data);
-      setNotes(notesRes.data.notes || []);
     } catch (err) {
       console.error('Error fetching teacher data:', err);
     } finally {
@@ -52,29 +38,6 @@ export default function TeacherDashboard() {
     fetchClassroomData();
   }, []);
 
-  const handlePushAssignment = async () => {
-    if (!targetStudentId || !assignmentTitle) return;
-
-    try {
-      setPushing(true);
-      await api.post('/teacher/push-assignment', {
-        teacherId: user?.id || 'teacher_1',
-        studentId: targetStudentId,
-        title: assignmentTitle,
-        noteId: selectedNoteId || undefined,
-      });
-
-      alert('Remedial material successfully pushed directly to student agenda!');
-      setShowPushModal(false);
-      setAssignmentTitle('');
-    } catch (err: any) {
-      console.error('Push assignment error:', err);
-      alert('Failed to push assignment.');
-    } finally {
-      setPushing(false);
-    }
-  };
-
   const summary = heatmapData?.summary || { totalStudents: 1, averageClassMastery: 80, averageAttendance: 90 };
   const heatmap = heatmapData?.heatmap || [];
   const roster = heatmapData?.studentRoster || [];
@@ -82,7 +45,7 @@ export default function TeacherDashboard() {
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* Welcome Section */}
         <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-3xl p-8 relative overflow-hidden bg-card">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
@@ -170,10 +133,10 @@ export default function TeacherDashboard() {
           )}
         </div>
 
-        {/* Student Roster Table & Remediation Push */}
+        {/* Student Roster Table (Exam-Aware) */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden space-y-4 shadow-sm">
           <div className="p-6 border-b border-border bg-input/50 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">Student Roster & Remediation Push</h2>
+            <h2 className="text-xl font-bold text-white">Student Roster</h2>
           </div>
 
           <div className="overflow-x-auto">
@@ -181,102 +144,66 @@ export default function TeacherDashboard() {
               <thead className="bg-input/50 text-xs uppercase text-[#a0a0a0] border-b border-border">
                 <tr>
                   <th className="p-4">Student Name</th>
-                  <th className="p-4">Mastery Accuracy</th>
-                  <th className="p-4">Attendance</th>
+                  <th className="p-4 text-right">Quiz Accuracy</th>
+                  <th className="p-4 text-right">Exam Avg</th>
+                  <th className="p-4 text-right">Mastery</th>
+                  <th className="p-4 text-center">Gap</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {roster.map((st: any) => (
-                  <tr key={st.id} className="hover:bg-white/5 transition-colors">
-                    <td className="p-4 font-semibold text-white">
-                      {st.name}
-                      <div className="text-xs font-normal text-[#a0a0a0]">{st.email}</div>
-                    </td>
-                    <td className="p-4 font-bold">{st.masteryScore}%</td>
-                    <td className="p-4">{st.attendancePct}%</td>
-                    <td className="p-4">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${st.status === 'Excelling' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}`}>
-                        {st.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => {
-                          setTargetStudentId(st.id);
-                          setAssignmentTitle(`Remedial Assignment: ${st.weakTopics[0] || 'Topic Revision'}`);
-                          setShowPushModal(true);
-                        }}
-                        className="bg-primary/20 hover:bg-primary hover:text-white text-primary border border-primary/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
-                      >
-                        <Send className="w-3.5 h-3.5" /> Push Remediation Note
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {roster.map((st: any) => {
+                  const gapColor = st.gapStatus === 'Surface Practice'
+                    ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                    : st.gapStatus === 'Exam Strong'
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    : st.gapStatus === 'No Exam Data'
+                    ? 'bg-white/5 text-[#a0a0b0] border-white/10'
+                    : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+
+                  return (
+                    <tr key={st.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 font-semibold text-white">
+                        {st.name}
+                        <div className="text-xs font-normal text-[#a0a0a0]">{st.email}</div>
+                      </td>
+                      <td className="p-4 text-right font-bold text-white">{st.quizAccuracy ?? '—'}%</td>
+                      <td className="p-4 text-right font-bold text-white">{st.examAverage ?? '—'}%</td>
+                      <td className="p-4 text-right font-bold text-indigo-400">{st.masteryScore}%</td>
+                      <td className="p-4 text-center">
+                        {st.gapStatus === 'No Exam Data' ? (
+                          <span className="text-xs text-[#a0a0a0]">—</span>
+                        ) : (
+                          <span className={`text-xs px-2 py-0.5 rounded font-bold border ${gapColor}`}>
+                            {st.gap > 0 ? `+${st.gap}` : st.gap}%
+                          </span>
+                        )}
+                        {st.hasGapFlag && (
+                          <div className="text-[10px] text-red-400 mt-0.5">⚠ Surface</div>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${st.status === 'Excelling' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : st.status === 'On Track' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                          {st.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={() => router.push(`/teacher-push?studentId=${st.id}`)}
+                          className="bg-primary/20 hover:bg-primary hover:text-white text-primary border border-primary/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Send className="w-3.5 h-3.5" /> Push
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Push Assignment Modal */}
-        {showPushModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
-              <div className="flex justify-between items-center border-b border-border pb-4">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Send className="w-5 h-5 text-primary" /> Push Remedial Assignment
-                </h2>
-                <button onClick={() => setShowPushModal(false)} className="text-[#a0a0a0] hover:text-white cursor-pointer">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Assignment Title</label>
-                  <input
-                    type="text"
-                    value={assignmentTitle}
-                    onChange={(e) => setAssignmentTitle(e.target.value)}
-                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Attach Study Note Document</label>
-                  <select
-                    value={selectedNoteId}
-                    onChange={(e) => setSelectedNoteId(e.target.value)}
-                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-colors"
-                  >
-                    <option value="">No File attached</option>
-                    {notes.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        📄 {n.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-border flex justify-end gap-3">
-                <button onClick={() => setShowPushModal(false)} className="px-4 py-2 rounded-xl text-sm text-[#a0a0a0] hover:text-white cursor-pointer">
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePushAssignment}
-                  disabled={pushing}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {pushing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {pushing ? 'Pushing Assignment...' : 'Push to Student Agenda'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );
