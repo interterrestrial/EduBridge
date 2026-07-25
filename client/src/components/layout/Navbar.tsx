@@ -40,7 +40,7 @@ export default function Navbar({ isCollapsed, toggleCollapse }: NavbarProps) {
   };
 
   return (
-    <div className="h-20 border-b border-border bg-card/80 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10 w-full">
+    <div className="h-20 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-30 w-full shadow-sm">
       <div className="flex items-center gap-4">
         {/* Mobile menu toggle (default hidden md) */}
         <button 
