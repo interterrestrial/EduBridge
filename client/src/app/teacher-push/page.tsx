@@ -156,19 +156,19 @@ function TeacherPushInner() {
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
-        <div className="bg-gradient-to-br from-indigo-900/40 to-black border border-indigo-500/30 rounded-3xl p-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        <div className="bg-card border border-border rounded-3xl p-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Push Remediation</h1>
-              <p className="text-[#a0a0b0] max-w-xl">
+              <p className="text-[#a0a0a0] max-w-xl">
                 Identify struggling students and push targeted notes or practice quizzes directly to their agenda.
               </p>
             </div>
             <button
               onClick={fetchData}
               disabled={loading}
-              className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shrink-0"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shrink-0 cursor-pointer"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               Refresh
@@ -180,9 +180,9 @@ function TeacherPushInner() {
 
           {/* Push Form */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-black/20 border border-white/10 rounded-2xl p-6 space-y-5">
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Send className="w-5 h-5 text-indigo-400" /> Push Assignment
+                <Send className="w-5 h-5 text-primary" /> Push Assignment
               </h2>
 
               {/* Student Selector */}
@@ -201,7 +201,7 @@ function TeacherPushInner() {
                     const s = students.find((st) => st.id === e.target.value);
                     if (s) setAssignmentTitle(`Remedial Assignment: ${s.weakTopics[0] || 'Topic Revision'}`);
                   }}
-                  className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
                 >
                   <option value="">Select a student...</option>
                   <option value="ALL">✨ All Students (Entire Classroom) ✨</option>
@@ -225,17 +225,17 @@ function TeacherPushInner() {
               {selectedStudent && (
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#a0a0b0]">Status</span>
+                    <span className="text-[#a0a0a0]">Status</span>
                     <span className={`font-bold ${selectedStudent.masteryScore >= 80 ? 'text-emerald-400' : selectedStudent.masteryScore >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
                       {selectedStudent.status}
                     </span>
                   </div>
                   {selectedStudent.weakTopics.length > 0 && (
                     <div>
-                      <span className="text-[#a0a0b0] text-sm">Weak Topics</span>
+                      <span className="text-[#a0a0a0] text-sm">Weak Topics</span>
                       <div className="flex flex-wrap gap-1.5 mt-1">
                         {selectedStudent.weakTopics.slice(0, 4).map((t, i) => (
-                          <span key={i} className="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                          <span key={i} className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
                             {t}
                           </span>
                         ))}
@@ -253,7 +253,7 @@ function TeacherPushInner() {
                   value={assignmentTitle}
                   onChange={(e) => setAssignmentTitle(e.target.value)}
                   placeholder="e.g., Review B+ Tree Indexing"
-                  className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
                 />
               </div>
 
@@ -263,13 +263,13 @@ function TeacherPushInner() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPushType('note')}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${pushType === 'note' ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-black/60 text-[#a0a0b0] border-white/10 hover:border-indigo-500/50'}`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${pushType === 'note' ? 'bg-primary text-primary-foreground border-primary' : 'bg-input text-[#a0a0a0] border-border hover:border-primary/50'}`}
                   >
                     <FileText className="w-4 h-4" /> Note
                   </button>
                   <button
                     onClick={() => setPushType('quiz')}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${pushType === 'quiz' ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-black/60 text-[#a0a0b0] border-white/10 hover:border-indigo-500/50'}`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${pushType === 'quiz' ? 'bg-primary text-primary-foreground border-primary' : 'bg-input text-[#a0a0a0] border-border hover:border-primary/50'}`}
                   >
                     <HelpCircle className="w-4 h-4" /> Quiz
                   </button>
@@ -283,7 +283,7 @@ function TeacherPushInner() {
                   <select
                     value={selectedNoteId}
                     onChange={(e) => setSelectedNoteId(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
                   >
                     <option value="">Select a note...</option>
                     {notes.map((n) => (
@@ -293,7 +293,7 @@ function TeacherPushInner() {
                     ))}
                   </select>
                   {notes.length === 0 && (
-                    <p className="text-xs text-[#a0a0b0] mt-1 flex items-center gap-1">
+                    <p className="text-xs text-[#a0a0a0] mt-1 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> No notes available yet
                     </p>
                   )}
@@ -306,7 +306,7 @@ function TeacherPushInner() {
                   <select
                     value={selectedQuizId}
                     onChange={(e) => setSelectedQuizId(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
                   >
                     <option value="">Select a quiz...</option>
                     {quizzes.map((q) => (
@@ -316,7 +316,7 @@ function TeacherPushInner() {
                     ))}
                   </select>
                   {quizzes.length === 0 && (
-                    <p className="text-xs text-[#a0a0b0] mt-1 flex items-center gap-1">
+                    <p className="text-xs text-[#a0a0a0] mt-1 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> No quizzes available yet
                     </p>
                   )}
@@ -326,7 +326,7 @@ function TeacherPushInner() {
               <button
                 onClick={handlePush}
                 disabled={pushing || !selectedStudentId || !assignmentTitle}
-                className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground px-5 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 {pushing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                 {pushing ? 'Pushing...' : 'Push to Student Agenda'}
@@ -336,24 +336,24 @@ function TeacherPushInner() {
 
           {/* Push History */}
           <div className="lg:col-span-2">
-            <div className="bg-black/20 border border-white/10 rounded-2xl p-6 space-y-4">
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <History className="w-5 h-5 text-indigo-400" /> Push History
+                <History className="w-5 h-5 text-primary" /> Push History
               </h2>
 
               {loading ? (
-                <div className="py-8 text-center text-[#a0a0b0] flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-indigo-400" /> Loading...
+                <div className="py-8 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" /> Loading...
                 </div>
               ) : history.length === 0 ? (
-                <div className="py-8 text-center text-[#a0a0b0]">
-                  <Users className="w-10 h-10 text-[#a0a0b0]/30 mx-auto mb-3" />
+                <div className="py-8 text-center text-[#a0a0a0]">
+                  <Users className="w-10 h-10 text-[#a0a0a0]/30 mx-auto mb-3" />
                   No push assignments yet. Select a student and push their first remediation.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-[#e0e0e0]">
-                    <thead className="bg-white/5 text-xs uppercase text-[#a0a0b0] border-b border-white/10">
+                    <thead className="bg-input text-xs uppercase text-[#a0a0a0] border-b border-border">
                       <tr>
                         <th className="p-4">Student</th>
                         <th className="p-4">Assignment</th>
@@ -362,22 +362,22 @@ function TeacherPushInner() {
                         <th className="p-4">Pushed</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-border">
                       {history.map((h) => (
                         <tr key={h.id} className="hover:bg-white/5 transition-colors">
                           <td className="p-4">
                             <div className="font-semibold text-white">{h.student.name}</div>
-                            <div className="text-xs text-[#a0a0b0]">{h.student.email}</div>
+                            <div className="text-xs text-[#a0a0a0]">{h.student.email}</div>
                           </td>
                           <td className="p-4 font-medium text-white">{h.title}</td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">
                               {h.materialType === 'note' ? (
-                                <FileText className="w-4 h-4 text-indigo-400" />
+                                <FileText className="w-4 h-4 text-primary" />
                               ) : (
                                 <HelpCircle className="w-4 h-4 text-amber-400" />
                               )}
-                              <span className="text-[#a0a0b0] text-sm">{h.materialTitle}</span>
+                              <span className="text-[#a0a0a0] text-sm">{h.materialTitle}</span>
                             </div>
                           </td>
                           <td className="p-4">
@@ -407,19 +407,19 @@ export default function TeacherPush() {
     <Suspense fallback={
       <DashboardLayout>
         <div className="max-w-7xl mx-auto space-y-8">
-          <div className="bg-gradient-to-br from-indigo-900/40 to-black border border-indigo-500/30 rounded-3xl p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+          <div className="bg-card border border-border rounded-3xl p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <h1 className="text-3xl font-bold text-white mb-2">Push Remediation</h1>
-                <p className="text-[#a0a0b0] max-w-xl">
+                <p className="text-[#a0a0a0] max-w-xl">
                   Identify struggling students and push targeted notes or practice quizzes directly to their agenda.
                 </p>
               </div>
             </div>
           </div>
-          <div className="py-16 text-center text-[#a0a0b0] flex items-center justify-center gap-2">
-            <Loader2 className="w-5 h-5 animate-spin text-indigo-400" /> Loading...
+          <div className="py-16 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" /> Loading...
           </div>
         </div>
       </DashboardLayout>

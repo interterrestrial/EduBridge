@@ -9,6 +9,7 @@ import {
   getUnassignedStudents,
   addStudentToClassroom,
   removeStudentFromClassroom,
+  updateStudentExamAvg,
 } from '../controllers/teacher.controller';
 import { createExam, getExams, getExam, saveScores, editScore, deleteExam } from '../controllers/exam.controller';
 import { authenticate } from '../middleware/authenticate';
@@ -28,6 +29,7 @@ router.get('/student/:studentId', getStudentDetail);
 router.get('/students/unassigned', getUnassignedStudents);
 router.post('/students', addStudentToClassroom);
 router.delete('/students/:studentId', removeStudentFromClassroom);
+router.patch('/students/:studentId/exam-avg', updateStudentExamAvg);
 
 // Exams
 router.post('/exams', createExam);

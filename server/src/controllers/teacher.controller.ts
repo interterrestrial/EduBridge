@@ -18,6 +18,7 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
       attendance: true,
       studentProfile: true,
       examScores: { include: { exam: { select: { maxMarks: true } } } },
+      teachersMapped: { where: { teacherId } },
     },
   });
 
@@ -31,16 +32,19 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
 
     // Exam average percentage
     const examScores = student.examScores;
-    const examPct = examScores.length > 0
+    const mapping = student.teachersMapped?.[0];
+    const calcExamAvg = examScores.length > 0
       ? Math.round(examScores.reduce((acc, s) => acc + (s.marks / s.exam.maxMarks) * 100, 0) / examScores.length)
       : 0;
+    const effectiveExamAvg = mapping?.manualExamAvg ?? (student as any).manualExamAvg ?? calcExamAvg;
+    const hasExamData = mapping?.manualExamAvg !== null && mapping?.manualExamAvg !== undefined || (student as any).manualExamAvg !== null && (student as any).manualExamAvg !== undefined || examScores.length > 0;
 
     // Blended mastery: 60% exam + 40% quiz
-    const masteryScore = examScores.length > 0 ? Math.round(0.6 * examPct + 0.4 * quizAccuracy) : quizAccuracy;
+    const masteryScore = hasExamData ? Math.round(0.6 * effectiveExamAvg + 0.4 * quizAccuracy) : quizAccuracy;
 
     // Gap: positive = high quiz practice but low exam (surface practice)
-    const gap = quizAccuracy - examPct;
-    const gapStatus = gap > 20 ? 'Surface Practice' : gap >= 0 ? 'Aligned' : 'Exam Strong';
+    const gap = quizAccuracy - effectiveExamAvg;
+    const gapStatus = !hasExamData ? 'No Exam Data' : gap > 20 ? 'Surface Practice' : gap >= 0 ? 'Aligned' : 'Exam Strong';
 
     const presentCount = student.attendance.filter((r) => r.status === 'present').length;
     const attendancePct = student.attendance.length > 0 ? Math.round((presentCount / student.attendance.length) * 100) : 0;
@@ -52,10 +56,11 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
       email: student.email,
       studentCode: student.studentCode || '—',
       quizAccuracy,
-      examAverage: examPct,
+      examAverage: effectiveExamAvg,
+      manualExamAvg: mapping?.manualExamAvg ?? (student as any).manualExamAvg ?? null,
       masteryScore,
       gap,
-      gapStatus,
+      hasGapFlag: hasExamData && gap > 20,
       quizzesTaken: attempts.length,
       attendancePct,
       status: masteryScore >= 80 ? 'Excelling' : masteryScore >= 60 ? 'On Track' : 'Needs Support',
@@ -298,6 +303,7 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
         include: { exam: { select: { id: true, title: true, maxMarks: true, examDate: true } } },
         orderBy: { exam: { examDate: 'desc' } },
       },
+      teachersMapped: { where: { teacherId: req.user?.id } },
     },
   });
 
@@ -312,19 +318,22 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
 
   // Exam average percentage (mirrors getClassroomHeatmap examPct with length guard)
   const examScores = student.examScores;
-  const examAverage = examScores.length > 0
+  const mapping = student.teachersMapped?.[0];
+  const calcExamAvg = examScores.length > 0
     ? Math.round(examScores.reduce((acc, s) => acc + (s.marks / s.exam.maxMarks) * 100, 0) / examScores.length)
     : 0;
+  const examAverage = mapping?.manualExamAvg ?? student.manualExamAvg ?? calcExamAvg;
+  const hasExamData = mapping?.manualExamAvg !== null && mapping?.manualExamAvg !== undefined || student.manualExamAvg !== null && student.manualExamAvg !== undefined || examScores.length > 0;
 
   // Blended mastery: 60% exam + 40% quiz (aligned with getClassroomHeatmap)
-  const masteryScore = examScores.length > 0 ? Math.round(0.6 * examAverage + 0.4 * quizAccuracy) : quizAccuracy;
+  const masteryScore = hasExamData ? Math.round(0.6 * examAverage + 0.4 * quizAccuracy) : quizAccuracy;
 
   // Gap indicator: positive gap = high quiz practice but low exam performance (surface practice)
   const gap = quizAccuracy - examAverage;
-  const gapStatus = examScores.length === 0
+  const gapStatus = !hasExamData
     ? 'No Exam Data'
     : gap > 20 ? 'Surface Practice' : gap >= 0 ? 'Aligned' : 'Exam Strong';
-  const hasGapFlag = examScores.length > 0 && gap > 20;
+  const hasGapFlag = hasExamData && gap > 20;
 
   res.status(200).json({
     student: {
@@ -333,6 +342,7 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
       email: student.email,
       quizAccuracy,
       examAverage,
+      manualExamAvg: mapping?.manualExamAvg ?? student.manualExamAvg ?? null,
       masteryScore,
       gap,
       gapStatus,
@@ -448,4 +458,50 @@ export const removeStudentFromClassroom = asyncHandler(async (req: AuthRequest, 
   });
 
   res.status(200).json({ message: 'Student removed from your classroom' });
+});
+
+/**
+ * Updates a student's manual exam average override individually.
+ */
+export const updateStudentExamAvg = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+  const teacherId = req.user.id;
+  const studentId = req.params.studentId as string;
+  const { examAverage } = req.body;
+
+  const val = examAverage === null || examAverage === undefined || examAverage === '' ? null : Number(examAverage);
+  if (val !== null && (isNaN(val) || val < 0 || val > 100)) {
+    throw new ApiError(400, 'Exam average must be a valid number between 0 and 100');
+  }
+
+  // Update User record
+  await prisma.user.update({
+    where: { id: studentId },
+    data: { manualExamAvg: val },
+  });
+
+  // Update TeacherStudent mapping record if exists
+  await prisma.teacherStudent.updateMany({
+    where: { teacherId, studentId },
+    data: { manualExamAvg: val },
+  });
+
+  // Create notification for student
+  if (val !== null) {
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: studentId,
+          title: 'Exam Average Updated',
+          message: `Your teacher updated your overall Exam Average to ${val}%.`,
+          type: 'EXAM_GRADED',
+          link: '/progress',
+        },
+      });
+    } catch (err) {
+      console.error('Failed to notify student of exam average update:', err);
+    }
+  }
+
+  res.status(200).json({ message: 'Student exam average updated successfully', examAverage: val });
 });

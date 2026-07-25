@@ -16,9 +16,10 @@ model User {
   provider  String   @default("local") // 'local' or 'google'
   googleId  String?  @unique
   avatar      String?
-  studentCode String?  @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  studentCode   String?  @unique
+  manualExamAvg Float?   // Optional manual override for student's overall exam average
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   studentProfile   StudentProfile?
   teacherProfile   TeacherProfile?
@@ -263,8 +264,9 @@ model TeacherStudent {
   teacher   User     @relation("TeacherStudents", fields: [teacherId], references: [id], onDelete: Cascade)
   studentId String
   student   User     @relation("StudentTeachers", fields: [studentId], references: [id], onDelete: Cascade)
-  subject   String?
-  createdAt DateTime @default(now())
+  subject       String?
+  manualExamAvg Float?   // Optional teacher-specific override for student's exam average in this classroom
+  createdAt     DateTime @default(now())
 
   @@unique([teacherId, studentId])
   @@index([teacherId])

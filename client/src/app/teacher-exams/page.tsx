@@ -201,12 +201,12 @@ export default function TeacherExams() {
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
-        <div className="bg-gradient-to-br from-indigo-900/40 to-black border border-indigo-500/30 rounded-3xl p-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        <div className="bg-card border border-border rounded-3xl p-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Exam Scores & Mastery</h1>
-              <p className="text-[#a0a0b0] max-w-xl">
+              <p className="text-[#a0a0a0] max-w-xl">
                 Create exams, enter student scores, and identify the gap between quiz practice and real understanding.
               </p>
             </div>
@@ -214,14 +214,14 @@ export default function TeacherExams() {
               <button
                 onClick={fetchExams}
                 disabled={loading}
-                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2"
+                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 cursor-pointer"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BarChart2 className="w-4 h-4" />}
                 Refresh
               </button>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg shadow-indigo-500/20"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg shadow-primary/20 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Create Exam
               </button>
@@ -231,33 +231,33 @@ export default function TeacherExams() {
 
         {/* Score Entry View */}
         {selectedExam && (
-          <div className="bg-black/20 border border-white/10 rounded-2xl p-6 space-y-6">
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
             <div className="flex items-center justify-between">
               <button
                 onClick={() => { setSelectedExam(null); setStudents([]); }}
-                className="text-[#a0a0b0] hover:text-white flex items-center gap-2 transition-colors"
+                className="text-[#a0a0a0] hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-5 h-5" /> Back to Exams
               </button>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-[#a0a0b0]">
+                <span className="text-sm text-[#a0a0a0]">
                   {selectedExam.title} — {selectedExam.subject}
                 </span>
-                <span className="text-xs px-2 py-1 rounded bg-white/5 text-[#a0a0b0] border border-white/10">
+                <span className="text-xs px-2 py-1 rounded bg-white/5 text-[#a0a0a0] border border-white/10">
                   Max: {selectedExam.maxMarks}
                 </span>
               </div>
             </div>
 
             {scoreLoading ? (
-              <div className="py-12 text-center text-[#a0a0b0] flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin text-indigo-400" /> Loading students...
+              <div className="py-12 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" /> Loading students...
               </div>
             ) : (
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-[#e0e0e0]">
-                    <thead className="bg-white/5 text-xs uppercase text-[#a0a0b0] border-b border-white/10">
+                    <thead className="bg-input text-xs uppercase text-[#a0a0a0] border-b border-border">
                       <tr>
                         <th className="p-4">Student Name</th>
                         <th className="p-4">Email</th>
@@ -265,11 +265,11 @@ export default function TeacherExams() {
                         <th className="p-4 w-32">Percentage</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-border">
                       {students.map((s) => (
                         <tr key={s.id} className="hover:bg-white/5 transition-colors">
                           <td className="p-4 font-semibold text-white">{s.name}</td>
-                          <td className="p-4 text-[#a0a0b0] text-sm">{s.email}</td>
+                          <td className="p-4 text-[#a0a0a0] text-sm">{s.email}</td>
                           <td className="p-4">
                             <input
                               type="number"
@@ -278,7 +278,7 @@ export default function TeacherExams() {
                               value={s.marks ?? ''}
                               onChange={(e) => handleMarksChange(s.id, e.target.value)}
                               placeholder="—"
-                              className="w-24 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-indigo-500 text-sm"
+                              className="w-24 bg-input border border-border rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-primary text-sm font-mono"
                             />
                           </td>
                           <td className="p-4">
@@ -292,14 +292,14 @@ export default function TeacherExams() {
                   </table>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
-                  <span className="text-xs text-[#a0a0b0]">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+                  <span className="text-xs text-[#a0a0a0]">
                     {students.filter((s) => s.marks !== null).length} of {students.length} students scored
                   </span>
                   <button
                     onClick={handleSaveScores}
                     disabled={saving}
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     {saving ? 'Saving...' : 'Save All Scores'}
@@ -331,14 +331,14 @@ export default function TeacherExams() {
         {!selectedExam && (
           <>
             {loading ? (
-              <div className="py-16 text-center text-[#a0a0b0] flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin text-indigo-400" /> Loading exams...
+              <div className="py-16 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" /> Loading exams...
               </div>
             ) : exams.length === 0 ? (
-              <div className="bg-black/20 border border-white/10 rounded-2xl p-12 text-center">
-                <BarChart2 className="w-12 h-12 text-[#a0a0b0]/40 mx-auto mb-4" />
+              <div className="bg-card border border-border rounded-2xl p-12 text-center">
+                <BarChart2 className="w-12 h-12 text-[#a0a0a0]/40 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-white mb-2">No Exams Yet</h3>
-                <p className="text-[#a0a0b0] max-w-md mx-auto">
+                <p className="text-[#a0a0a0] max-w-md mx-auto">
                   Create your first exam to start tracking real student performance and identifying the practice-understanding gap.
                 </p>
               </div>
@@ -348,14 +348,14 @@ export default function TeacherExams() {
                   <div
                     key={exam.id}
                     onClick={() => handleSelectExam(exam)}
-                    className="bg-black/20 border border-white/10 rounded-2xl p-6 cursor-pointer hover:bg-white/5 hover:border-indigo-500/40 transition-all group"
+                    className="bg-card border border-border rounded-2xl p-6 cursor-pointer hover:bg-white/5 hover:border-primary/50 transition-all group"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-white truncate group-hover:text-indigo-400 transition-colors">
+                        <h3 className="text-lg font-bold text-white truncate group-hover:text-primary transition-colors">
                           {exam.title}
                         </h3>
-                        <p className="text-sm text-[#a0a0b0] mt-1">{exam.subject}</p>
+                        <p className="text-sm text-[#a0a0a0] mt-1">{exam.subject}</p>
                       </div>
                       <button
                         onClick={(e) => handleDeleteExam(e, exam.id)}
@@ -402,12 +402,12 @@ export default function TeacherExams() {
         {/* Create Exam Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-black/90 border border-indigo-500/40 rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
-              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
+              <div className="flex justify-between items-center border-b border-border pb-4">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-indigo-400" /> Create Exam
+                  <Plus className="w-5 h-5 text-primary" /> Create Exam
                 </h2>
-                <button onClick={() => setShowCreateModal(false)} className="text-[#a0a0b0] hover:text-white">
+                <button onClick={() => setShowCreateModal(false)} className="text-[#a0a0a0] hover:text-white cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -420,7 +420,7 @@ export default function TeacherExams() {
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     placeholder="e.g., Midterm Exam 1"
-                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
                   />
                 </div>
 
@@ -429,7 +429,7 @@ export default function TeacherExams() {
                   <select
                     value={newSubject}
                     onChange={(e) => setNewSubject(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
                   >
                     <option value="">Select a subject...</option>
                     <option value="Data Preprocessing & Analytics">Data Preprocessing & Analytics</option>
@@ -446,7 +446,7 @@ export default function TeacherExams() {
                       value={newMaxMarks}
                       onChange={(e) => setNewMaxMarks(e.target.value)}
                       placeholder="100"
-                      className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
                     />
                   </div>
                   <div>
@@ -455,20 +455,20 @@ export default function TeacherExams() {
                       type="date"
                       value={newExamDate}
                       onChange={(e) => setNewExamDate(e.target.value)}
-                      className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
-                <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-xl text-sm text-[#a0a0b0] hover:text-white">
+              <div className="pt-4 border-t border-border flex justify-end gap-3">
+                <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-xl text-sm text-[#a0a0a0] hover:text-white cursor-pointer">
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateExam}
                   disabled={creating}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   {creating ? 'Creating...' : 'Create Exam'}
