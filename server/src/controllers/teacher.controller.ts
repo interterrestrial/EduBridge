@@ -8,11 +8,14 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
   if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
   const teacherId = req.user.id;
 
-  // Students belonging to this teacher: we treat all students as belonging to the platform teacher
-  // (single-classroom model). A future task may add teacher->student enrollment.
   const students = await prisma.user.findMany({
     where: { role: 'student' },
-    include: { quizAttempts: true, attendance: true, studentProfile: true },
+    include: {
+      quizAttempts: true,
+      attendance: true,
+      studentProfile: true,
+      examScores: { include: { exam: { select: { maxMarks: true } } } },
+    },
   });
 
   const topicAccuracyMap: Record<string, { correctSum: number; totalSum: number }> = {};
@@ -21,7 +24,21 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
   for (const student of students) {
     const attempts = student.quizAttempts;
     const accuracies = attempts.map((a) => a.accuracy);
-    const avgAccuracy = accuracies.length > 0 ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length) : 0;
+    const quizAccuracy = accuracies.length > 0 ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length) : 0;
+
+    // Exam average percentage
+    const examScores = student.examScores;
+    const examPct = examScores.length > 0
+      ? Math.round(examScores.reduce((acc, s) => acc + (s.marks / s.exam.maxMarks) * 100, 0) / examScores.length)
+      : 0;
+
+    // Blended mastery: 60% exam + 40% quiz
+    const masteryScore = Math.round(0.6 * examPct + 0.4 * quizAccuracy);
+
+    // Gap: positive = high quiz practice but low exam (surface practice)
+    const gap = quizAccuracy - examPct;
+    const gapStatus = gap > 20 ? 'Surface Practice' : gap >= 0 ? 'Aligned' : 'Exam Strong';
+
     const presentCount = student.attendance.filter((r) => r.status === 'present').length;
     const attendancePct = student.attendance.length > 0 ? Math.round((presentCount / student.attendance.length) * 100) : 100;
     const weakTopics = Array.from(new Set(attempts.flatMap((a) => JSON.parse(a.weakTopicsJson || '[]'))));
@@ -30,10 +47,14 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
       id: student.id,
       name: student.name,
       email: student.email,
-      masteryScore: avgAccuracy,
+      quizAccuracy,
+      examAverage: examPct,
+      masteryScore,
+      gap,
+      gapStatus,
       quizzesTaken: attempts.length,
       attendancePct,
-      status: avgAccuracy >= 80 ? 'Excelling' : avgAccuracy >= 60 ? 'On Track' : 'Needs Support',
+      status: masteryScore >= 80 ? 'Excelling' : masteryScore >= 60 ? 'On Track' : 'Needs Support',
       weakTopics,
     });
 
@@ -155,6 +176,10 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
       notes: { select: { id: true, title: true, createdAt: true }, orderBy: { createdAt: 'desc' } },
       flashcards: { select: { id: true, topic: true, type: true } },
       attendance: { orderBy: { date: 'desc' } },
+      examScores: {
+        include: { exam: { select: { id: true, title: true, maxMarks: true, examDate: true } } },
+        orderBy: { exam: { examDate: 'desc' } },
+      },
     },
   });
 
@@ -162,19 +187,40 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
 
   const attempts = student.quizAttempts;
   const accuracies = attempts.map((a) => a.accuracy);
-  const avgAccuracy = accuracies.length > 0 ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length) : 0;
+  const quizAccuracy = accuracies.length > 0 ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length) : 0;
   const weakTopics = Array.from(new Set(attempts.flatMap((a) => JSON.parse(a.weakTopicsJson || '[]'))));
   const presentCount = student.attendance.filter((r) => r.status === 'present').length;
   const attendancePct = student.attendance.length > 0 ? Math.round((presentCount / student.attendance.length) * 100) : 100;
+
+  // Exam average percentage (mirrors getClassroomHeatmap examPct with length guard)
+  const examScores = student.examScores;
+  const examAverage = examScores.length > 0
+    ? Math.round(examScores.reduce((acc, s) => acc + (s.marks / s.exam.maxMarks) * 100, 0) / examScores.length)
+    : 0;
+
+  // Blended mastery: 60% exam + 40% quiz (aligned with getClassroomHeatmap)
+  const masteryScore = Math.round(0.6 * examAverage + 0.4 * quizAccuracy);
+
+  // Gap indicator: positive gap = high quiz practice but low exam performance (surface practice)
+  const gap = quizAccuracy - examAverage;
+  const gapStatus = examScores.length === 0
+    ? 'No Exam Data'
+    : gap > 20 ? 'Surface Practice' : gap >= 0 ? 'Aligned' : 'Exam Strong';
+  const hasGapFlag = examScores.length > 0 && gap > 20;
 
   res.status(200).json({
     student: {
       id: student.id,
       name: student.name,
       email: student.email,
-      masteryScore: avgAccuracy,
+      quizAccuracy,
+      examAverage,
+      masteryScore,
+      gap,
+      gapStatus,
+      hasGapFlag,
       attendancePct,
-      status: avgAccuracy >= 80 ? 'Excelling' : avgAccuracy >= 60 ? 'On Track' : 'Needs Support',
+      status: masteryScore >= 80 ? 'Excelling' : masteryScore >= 60 ? 'On Track' : 'Needs Support',
       weakTopics,
       profile: student.studentProfile,
       quizAttempts: attempts.map((a) => ({
@@ -187,6 +233,15 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
         accuracy: a.accuracy,
         weakTopics: JSON.parse(a.weakTopicsJson || '[]'),
         createdAt: a.createdAt,
+      })),
+      examScores: examScores.map((s) => ({
+        id: s.id,
+        examId: s.examId,
+        title: s.exam.title,
+        marks: s.marks,
+        maxMarks: s.exam.maxMarks,
+        percentage: Math.round((s.marks / s.exam.maxMarks) * 100),
+        examDate: s.exam.examDate,
       })),
       noteCount: student.notes.length,
       flashcardCount: student.flashcards.length,

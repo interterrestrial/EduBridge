@@ -33,6 +33,8 @@ model User {
   attendance       AttendanceRecord[]
   pushReceived     TeacherPushAssignment[] @relation("StudentPushAssignments")
   pushSent         TeacherPushAssignment[] @relation("TeacherPushAssignments")
+  examsCreated     Exam[]      @relation("TeacherExams")
+  examScores       ExamScore[] @relation("StudentExamScores")
 }
 
 model StudentProfile {
@@ -219,4 +221,33 @@ model TeacherPushAssignment {
 
   @@index([studentId])
   @@index([teacherId])
+}
+
+model Exam {
+  id        String   @id @default(uuid())
+  title     String
+  subject   String
+  maxMarks  Int
+  examDate  String
+  teacherId String
+  teacher   User     @relation("TeacherExams", fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  scores ExamScore[]
+
+  @@index([teacherId])
+}
+
+model ExamScore {
+  id        String   @id @default(uuid())
+  examId    String
+  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User     @relation("StudentExamScores", fields: [studentId], references: [id], onDelete: Cascade)
+  marks     Int
+  createdAt DateTime @default(now())
+
+  @@unique([examId, studentId])
+  @@index([studentId])
+  @@index([examId])
 }
