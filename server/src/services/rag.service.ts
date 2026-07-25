@@ -17,18 +17,20 @@ export class RagService {
     question: string,
     systemPrompt: string,
     noteId?: string,
-    topK: number = 8
+    topK: number = 8,
+    noteIds?: string[]
   ): Promise<ChatResponse> {
     const isMetaQuery = /^(who (are|am) (you|i)|hello|hi|hey|who is this|what can you do)/i.test(
       question.trim()
     );
 
-    // 1. Retrieve top matching chunks
+    // 1. Retrieve top matching chunks (filtered by noteId or folder's noteIds)
     const chunks = await this.retrievalService.retrieveRelevantContext(
       studentId,
       question,
       topK,
-      noteId
+      noteId,
+      noteIds
     );
 
     // 2. Build context string
@@ -43,7 +45,7 @@ ${contextText}
 ## Student Question
 ${question}`;
 
-    // 4. Generate response via Gemini
+    // 4. Generate response via LLM
     const answer = await this.llmService.generate(fullPrompt);
 
     // 5. Build source citations ONLY if query is a real academic/study query & context was used

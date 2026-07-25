@@ -12,8 +12,9 @@ export class RetrievalService {
     studentId: string,
     query: string,
     topK: number = 5,
-    noteId?: string
+    noteId?: string,
+    noteIds?: string[]
   ): Promise<Document[]> {
-    return await this.vectorService.search(studentId, query, topK, noteId);
+    return await this.vectorService.search(studentId, query, topK, noteId, noteIds);
   }
 }

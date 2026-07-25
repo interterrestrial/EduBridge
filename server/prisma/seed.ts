@@ -221,7 +221,47 @@ async function main() {
     }
   }
 
-  // --- 6. Teacher pushes a sample assignment to Yash (demo of the feature) ---
+  // --- 6. Exams & Exam Scores (teacher creates 2-3 exams, all students get scores) ---
+  const EXAMS = [
+    { title: 'Midterm Exam 1', subject: 'Data Preprocessing & Analytics', maxMarks: 100, examDate: '2026-07-15' },
+    { title: 'Midterm Exam 2', subject: 'Design & Analysis of Algorithms', maxMarks: 100, examDate: '2026-07-22' },
+    { title: 'Final Exam', subject: 'Database Systems & Indexing', maxMarks: 100, examDate: '2026-08-01' },
+  ];
+
+  console.log('   Generating exams and scores...');
+  const allStudents = await prisma.user.findMany({ where: { role: 'student' }, select: { id: true } });
+
+  for (const examData of EXAMS) {
+    const exam = await prisma.exam.create({
+      data: {
+        title: examData.title,
+        subject: examData.subject,
+        maxMarks: examData.maxMarks,
+        examDate: examData.examDate,
+        teacherId: teacher.id,
+      },
+    });
+
+    // Give each student a score with some correlation to their quiz tier
+    for (const stu of allStudents) {
+      // Base score around 60% with variation based on their tier
+      // We can't easily access tier here, so use a deterministic per-student factor
+      const studentFactor = (rand() - 0.5) * 0.6; // -30% to +30% around base
+      const basePct = 60;
+      const pct = Math.max(20, Math.min(100, Math.round(basePct + studentFactor * 100)));
+      const marks = Math.round((pct / 100) * exam.maxMarks);
+
+      await prisma.examScore.create({
+        data: {
+          examId: exam.id,
+          studentId: stu.id,
+          marks,
+        },
+      });
+    }
+  }
+
+  // --- 7. Teacher pushes a sample assignment to Yash (demo of the feature) ---
   const existingPush = await prisma.teacherPushAssignment.findFirst({
     where: { teacherId: teacher.id, studentId: student.id },
   });
@@ -242,12 +282,15 @@ async function main() {
   const totalStudents = await prisma.user.count({ where: { role: 'student' } });
   const totalQuizzes = await prisma.quiz.count();
   const totalAttempts = await prisma.quizAttempt.count();
+  const totalExams = await prisma.exam.count();
+  const totalExamScores = await prisma.examScore.count();
 
   console.log(`✅ Seed complete!`);
   console.log(`   📊 ${totalStudents} students (1 primary + ${NUM_SYNTHETIC} synthetic)`);
   console.log(`   📝 ${totalQuizzes} quizzes, ${totalAttempts} quiz attempts`);
+  console.log(`   📋 ${totalExams} exams, ${totalExamScores} exam scores`);
   console.log(`   🔑 Login: student@edubridge.edu / demo1234  (primary student)`);
-  console.log(`   🔑 Login: teacher@edubridge.edu / demo1234  (teacher — see full roster + heatmap)`);
+  console.log(`   🔑 Login: teacher@edubridge.edu / demo1234  (teacher — see full roster + heatmap + exams)`);
 }
 
 main()

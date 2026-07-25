@@ -43,8 +43,8 @@ export default function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
 
   const teacherLinks = [
     { name: 'Classroom Command', href: '/teacher-dashboard', icon: Users },
-    { name: 'Class Heatmap & Roster', href: '/teacher-dashboard', icon: BarChart2 },
-    { name: 'Push Remedial Notes', href: '/teacher-dashboard', icon: Send },
+    { name: 'Exam Scores & Mastery', href: '/teacher-exams', icon: BarChart2 },
+    { name: 'Push Remediation', href: '/teacher-push', icon: Send },
   ];
 
   const links = isTeacher ? teacherLinks : studentLinks;

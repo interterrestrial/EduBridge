@@ -113,6 +113,37 @@ export const pushMaterialToStudent = asyncHandler(async (req: AuthRequest, res: 
 });
 
 /**
+ * Lists all push assignments sent by this teacher, with student + material details.
+ */
+export const getPushHistory = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+  const teacherId = req.user.id;
+
+  const assignments = await prisma.teacherPushAssignment.findMany({
+    where: { teacherId },
+    include: {
+      student: { select: { id: true, name: true, email: true } },
+      note: { select: { id: true, title: true } },
+      quiz: { select: { id: true, title: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const formatted = assignments.map((a) => ({
+    id: a.id,
+    title: a.title,
+    materialType: a.noteId ? 'note' : 'quiz',
+    materialTitle: a.note?.title || a.quiz?.title || 'Deleted',
+    student: { id: a.studentId, name: a.student.name, email: a.student.email },
+    status: a.status,
+    dueDate: a.dueDate,
+    createdAt: a.createdAt,
+  }));
+
+  res.status(200).json({ assignments: formatted });
+});
+
+/**
  * Lists all notes across all students (for the teacher push-assignment modal dropdown).
  * In a single-classroom model, teachers can push any student's note to any other student.
  */

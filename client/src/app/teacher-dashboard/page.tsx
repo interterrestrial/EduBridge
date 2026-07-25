@@ -3,50 +3,30 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks/useAuth';
-import { 
-  Users, 
-  TrendingUp, 
+import {
+  Users,
+  TrendingUp,
   AlertTriangle,
   BrainCircuit,
   UserCheck,
   Target,
   Loader2,
-  CheckCircle2,
   Send,
-  FileText,
-  HelpCircle,
-  X
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [heatmapData, setHeatmapData] = useState<any>(null);
-  const [notes, setNotes] = useState<any[]>([]);
-  const [quizzes, setQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Push Assignment Modal State
-  const [showPushModal, setShowPushModal] = useState(false);
-  const [targetStudentId, setTargetStudentId] = useState<string>('');
-  const [assignmentTitle, setAssignmentTitle] = useState<string>('');
-  const [pushType, setPushType] = useState<'note' | 'quiz'>('note');
-  const [selectedNoteId, setSelectedNoteId] = useState<string>('');
-  const [selectedQuizId, setSelectedQuizId] = useState<string>('');
-  const [pushing, setPushing] = useState(false);
+  const router = useRouter();
 
   const fetchClassroomData = async () => {
     try {
       setLoading(true);
-      const [heatmapRes, notesRes, quizzesRes] = await Promise.all([
-        api.get('/teacher/heatmap'),
-        api.get('/teacher/notes'),
-        api.get('/teacher/quizzes'),
-      ]);
-
+      const heatmapRes = await api.get('/teacher/heatmap');
       setHeatmapData(heatmapRes.data);
-      setNotes(notesRes.data.notes || []);
-      setQuizzes(quizzesRes.data.quizzes || []);
     } catch (err) {
       console.error('Error fetching teacher data:', err);
     } finally {
@@ -57,37 +37,6 @@ export default function TeacherDashboard() {
   useEffect(() => {
     fetchClassroomData();
   }, []);
-
-  const handlePushAssignment = async () => {
-    if (!targetStudentId || !assignmentTitle) return;
-    const noteId = pushType === 'note' ? selectedNoteId : undefined;
-    const quizId = pushType === 'quiz' ? selectedQuizId : undefined;
-    if (!noteId && !quizId) {
-      alert('Please select a note or quiz to push.');
-      return;
-    }
-
-    try {
-      setPushing(true);
-      await api.post('/teacher/push-assignment', {
-        studentId: targetStudentId,
-        title: assignmentTitle,
-        noteId: noteId || undefined,
-        quizId: quizId || undefined,
-      });
-
-      alert('Remedial material successfully pushed directly to student agenda!');
-      setShowPushModal(false);
-      setAssignmentTitle('');
-      setSelectedNoteId('');
-      setSelectedQuizId('');
-    } catch (err: any) {
-      console.error('Push assignment error:', err);
-      alert(err?.response?.data?.error || 'Failed to push assignment.');
-    } finally {
-      setPushing(false);
-    }
-  };
 
   const summary = heatmapData?.summary || { totalStudents: 1, averageClassMastery: 80, averageAttendance: 90 };
   const heatmap = heatmapData?.heatmap || [];
@@ -184,10 +133,10 @@ export default function TeacherDashboard() {
           )}
         </div>
 
-        {/* Student Roster Table & Remediation Push */}
-        <div className="bg-black/20 border border-white/10 rounded-2xl overflow-hidden space-y-4">
+        {/* Student Roster Table */}
+        <div className="bg-black/20 border border-white/10 rounded-2xl overflow-hidden">
           <div className="p-6 border-b border-white/10 bg-white/5 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">Student Roster & Remediation Push</h2>
+            <h2 className="text-xl font-bold text-white">Student Roster</h2>
           </div>
 
           <div className="overflow-x-auto">
@@ -195,152 +144,66 @@ export default function TeacherDashboard() {
               <thead className="bg-white/5 text-xs uppercase text-[#a0a0b0] border-b border-white/10">
                 <tr>
                   <th className="p-4">Student Name</th>
-                  <th className="p-4">Mastery Accuracy</th>
-                  <th className="p-4">Attendance</th>
+                  <th className="p-4 text-right">Quiz Accuracy</th>
+                  <th className="p-4 text-right">Exam Avg</th>
+                  <th className="p-4 text-right">Mastery</th>
+                  <th className="p-4 text-center">Gap</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {roster.map((st: any) => (
-                  <tr key={st.id} className="hover:bg-white/5 transition-colors">
-                    <td className="p-4 font-semibold text-white">
-                      {st.name}
-                      <div className="text-xs font-normal text-[#a0a0b0]">{st.email}</div>
-                    </td>
-                    <td className="p-4 font-bold">{st.masteryScore}%</td>
-                    <td className="p-4">{st.attendancePct}%</td>
-                    <td className="p-4">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${st.status === 'Excelling' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}`}>
-                        {st.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => {
-                          setTargetStudentId(st.id);
-                          setAssignmentTitle(`Remedial Assignment: ${st.weakTopics[0] || 'Topic Revision'}`);
-                          setPushType('note');
-                          setSelectedNoteId('');
-                          setSelectedQuizId('');
-                          setShowPushModal(true);
-                        }}
-                        className="bg-indigo-500/20 hover:bg-indigo-500 hover:text-white text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors"
-                      >
-                        <Send className="w-3.5 h-3.5" /> Push Remediation
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {roster.map((st: any) => {
+                  const gapColor = st.gapStatus === 'Surface Practice'
+                    ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                    : st.gapStatus === 'Exam Strong'
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    : st.gapStatus === 'No Exam Data'
+                    ? 'bg-white/5 text-[#a0a0b0] border-white/10'
+                    : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+
+                  return (
+                    <tr key={st.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 font-semibold text-white">
+                        {st.name}
+                        <div className="text-xs font-normal text-[#a0a0b0]">{st.email}</div>
+                      </td>
+                      <td className="p-4 text-right font-bold text-white">{st.quizAccuracy ?? '—'}%</td>
+                      <td className="p-4 text-right font-bold text-white">{st.examAverage ?? '—'}%</td>
+                      <td className="p-4 text-right font-bold text-indigo-400">{st.masteryScore}%</td>
+                      <td className="p-4 text-center">
+                        {st.gapStatus === 'No Exam Data' ? (
+                          <span className="text-xs text-[#a0a0b0]">—</span>
+                        ) : (
+                          <span className={`text-xs px-2 py-0.5 rounded font-bold border ${gapColor}`}>
+                            {st.gap > 0 ? `+${st.gap}` : st.gap}%
+                          </span>
+                        )}
+                        {st.hasGapFlag && (
+                          <div className="text-[10px] text-red-400 mt-0.5">⚠ Surface</div>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${st.status === 'Excelling' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : st.status === 'On Track' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                          {st.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={() => router.push(`/teacher-push?studentId=${st.id}`)}
+                          className="bg-indigo-500/20 hover:bg-indigo-500 hover:text-white text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors"
+                        >
+                          <Send className="w-3.5 h-3.5" /> Push
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Push Assignment Modal */}
-        {showPushModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-black/90 border border-indigo-500/40 rounded-2xl p-6 max-w-md w-full space-y-6 shadow-2xl relative">
-              <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Send className="w-5 h-5 text-indigo-400" /> Push Remedial Assignment
-                </h2>
-                <button onClick={() => setShowPushModal(false)} className="text-[#a0a0b0] hover:text-white">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Assignment Title</label>
-                  <input
-                    type="text"
-                    value={assignmentTitle}
-                    onChange={(e) => setAssignmentTitle(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                {/* Push Type Toggle */}
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Material Type</label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setPushType('note')}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${pushType === 'note' ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-black/60 text-[#a0a0b0] border-white/10 hover:border-indigo-500/50'}`}
-                    >
-                      <FileText className="w-4 h-4" /> Study Note
-                    </button>
-                    <button
-                      onClick={() => setPushType('quiz')}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${pushType === 'quiz' ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-black/60 text-[#a0a0b0] border-white/10 hover:border-indigo-500/50'}`}
-                    >
-                      <HelpCircle className="w-4 h-4" /> Practice Quiz
-                    </button>
-                  </div>
-                </div>
-
-                {/* Note Selector */}
-                {pushType === 'note' && (
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-2">Select Study Note</label>
-                    <select
-                      value={selectedNoteId}
-                      onChange={(e) => setSelectedNoteId(e.target.value)}
-                      className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
-                    >
-                      <option value="">Select a note...</option>
-                      {notes.map((n) => (
-                        <option key={n.id} value={n.id}>
-                          📄 {n.title} {n.student ? `(${n.student.name})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    {notes.length === 0 && (
-                      <p className="text-xs text-[#a0a0b0] mt-1">No notes available yet. Students need to upload notes first.</p>
-                    )}
-                  </div>
-                )}
-
-                {/* Quiz Selector */}
-                {pushType === 'quiz' && (
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-2">Select Practice Quiz</label>
-                    <select
-                      value={selectedQuizId}
-                      onChange={(e) => setSelectedQuizId(e.target.value)}
-                      className="w-full bg-black/60 border border-white/10 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-indigo-500"
-                    >
-                      <option value="">Select a quiz...</option>
-                      {quizzes.map((q) => (
-                        <option key={q.id} value={q.id}>
-                          📝 {q.title} ({q.difficulty}) {q.student ? `— ${q.student.name}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    {quizzes.length === 0 && (
-                      <p className="text-xs text-[#a0a0b0] mt-1">No quizzes available yet. Students need to generate quizzes first.</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
-                <button onClick={() => setShowPushModal(false)} className="px-4 py-2 rounded-xl text-sm text-[#a0a0b0] hover:text-white">
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePushAssignment}
-                  disabled={pushing}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  {pushing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {pushing ? 'Pushing Assignment...' : 'Push to Student Agenda'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );
