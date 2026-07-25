@@ -82,10 +82,14 @@ export const getExam = asyncHandler(async (req: AuthRequest, res: Response) => {
   });
   if (!exam) throw new ApiError(404, 'Exam not found or not owned by you');
 
-  // Get all students to show in the table (even those without a score yet)
+  // Get all students in this teacher's classroom to show in the table
+  const teacherId = req.user.id;
   const students = await prisma.user.findMany({
-    where: { role: 'student' },
-    select: { id: true, name: true, email: true },
+    where: {
+      role: 'student',
+      teachersMapped: { some: { teacherId } },
+    },
+    select: { id: true, name: true, email: true, studentCode: true },
     orderBy: { name: 'asc' },
   });
 
@@ -97,6 +101,7 @@ export const getExam = asyncHandler(async (req: AuthRequest, res: Response) => {
       id: student.id,
       name: student.name,
       email: student.email,
+      studentCode: student.studentCode || '—',
       marks: score?.marks ?? null,
       percentage: score ? Math.round((score.marks / exam.maxMarks) * 100) : null,
     };

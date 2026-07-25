@@ -15,9 +15,10 @@ model User {
   role      String   @default("unassigned") // 'student', 'teacher', or 'unassigned'
   provider  String   @default("local") // 'local' or 'google'
   googleId  String?  @unique
-  avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  avatar      String?
+  studentCode String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   studentProfile   StudentProfile?
   teacherProfile   TeacherProfile?
@@ -35,6 +36,8 @@ model User {
   pushSent         TeacherPushAssignment[] @relation("TeacherPushAssignments")
   examsCreated     Exam[]      @relation("TeacherExams")
   examScores       ExamScore[] @relation("StudentExamScores")
+  studentsMapped   TeacherStudent[] @relation("TeacherStudents")
+  teachersMapped   TeacherStudent[] @relation("StudentTeachers")
 }
 
 model StudentProfile {
@@ -55,6 +58,7 @@ model TeacherProfile {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization   String?
   department     String?
+  subject        String?
   specialization String?
   experience     Int?
   createdAt      DateTime @default(now())
@@ -251,3 +255,17 @@ model ExamScore {
   @@index([studentId])
   @@index([examId])
 }
+
+model TeacherStudent {
+  id        String   @id @default(uuid())
+  teacherId String
+  teacher   User     @relation("TeacherStudents", fields: [teacherId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User     @relation("StudentTeachers", fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([teacherId, studentId])
+  @@index([teacherId])
+  @@index([studentId])
+}
+

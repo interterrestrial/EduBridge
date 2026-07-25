@@ -8,6 +8,10 @@ export interface User {
   email: string;
   role: string;
   avatar?: string;
+  studentCode?: string;
+  teachersMapped?: any[];
+  studentProfile?: any;
+  teacherProfile?: any;
 }
 
 export const useAuth = () => {

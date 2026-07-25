@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
-import { BookOpen, Users } from 'lucide-react';
+import { BookOpen, Users, GraduationCap } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { Card } from '../../components/ui/Card';
 
@@ -43,10 +43,12 @@ export default function ChooseRolePage() {
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background text-foreground font-sans">
       <Card className="w-full max-w-3xl p-10 md:p-14 flex flex-col items-center">
         
-        {/* Logo Placeholder */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="bg-[#d9d9d9] w-12 h-12 rounded-xl"></div>
-          <span className="text-3xl font-bold tracking-tight text-white">EduBridge</span>
+        {/* Logo */}
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center shadow-lg border border-primary/30">
+            <GraduationCap className="w-10 h-10 text-primary" />
+          </div>
+          <span className="font-heading text-4xl font-bold text-white tracking-tight">EduBridge</span>
         </div>
 
         <h1 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4 text-center">Choose Your Path</h1>

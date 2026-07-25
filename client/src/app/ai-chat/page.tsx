@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { 
@@ -91,7 +91,7 @@ const CodeBlock = ({ inline, className, children, ...props }: any) => {
   );
 };
 
-export default function AIChatPage() {
+function AIChatContent() {
   const { user } = useAuth();
   const studentId = user?.id || 'student_1';
   const searchParams = useSearchParams();
@@ -621,5 +621,13 @@ export default function AIChatPage() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function AIChatPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-[#a0a0a0]"><Loader2 className="w-6 h-6 animate-spin text-primary mr-2" /> Loading AI Tutor...</div>}>
+      <AIChatContent />
+    </Suspense>
   );
 }

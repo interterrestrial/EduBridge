@@ -1,7 +1,8 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Bell, Search, Menu, PanelLeftOpen } from 'lucide-react';
+import { Bell, Search, Menu, PanelLeftOpen, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Image from 'next/image';
 
@@ -13,6 +14,18 @@ interface NavbarProps {
 export default function Navbar({ isCollapsed, toggleCollapse }: NavbarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const getPageTitle = () => {
     if (pathname.includes('student-dashboard') || pathname.includes('teacher-dashboard')) return 'Dashboard';
@@ -47,6 +60,24 @@ export default function Navbar({ isCollapsed, toggleCollapse }: NavbarProps) {
             <PanelLeftOpen className="w-5 h-5" />
           </button>
         )}
+        
+        {(isCollapsed || true) && (
+          <div className="flex items-center gap-2 md:hidden">
+            <div className="bg-primary/20 w-8 h-8 rounded-lg flex items-center justify-center border border-primary/30">
+              <GraduationCap className="w-5 h-5 text-primary" />
+            </div>
+            <span className="font-heading text-lg font-bold text-white tracking-tight">EduBridge</span>
+          </div>
+        )}
+        {isCollapsed && (
+          <div className="hidden md:flex items-center gap-2 mr-2">
+            <div className="bg-primary/20 w-8 h-8 rounded-lg flex items-center justify-center border border-primary/30">
+              <GraduationCap className="w-5 h-5 text-primary" />
+            </div>
+            <span className="font-heading text-lg font-bold text-white tracking-tight">EduBridge</span>
+          </div>
+        )}
+
         <h1 className="text-xl font-bold text-white hidden md:block">{getPageTitle()}</h1>
       </div>
 
@@ -65,33 +96,45 @@ export default function Navbar({ isCollapsed, toggleCollapse }: NavbarProps) {
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-card"></span>
         </button>
 
-        <div className="flex items-center gap-3 border-l border-border pl-6 cursor-pointer group">
-          <div className="text-right hidden md:block">
-            <p className="text-sm font-semibold text-white leading-tight">{user?.name || 'User'}</p>
-            <p className="text-xs text-[#a0a0a0] capitalize">{user?.role || 'Student'}</p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary/50 p-[2px]">
-            <div className="w-full h-full rounded-full bg-background overflow-hidden flex items-center justify-center relative">
-              {user?.avatar ? (
-                <Image src={user.avatar} alt={user.name} fill className="object-cover" />
-              ) : (
-                <span className="text-white font-bold text-sm">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              )}
+        <div ref={dropdownRef} className="relative border-l border-border pl-6">
+          <div 
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="flex items-center gap-3 cursor-pointer select-none py-1 hover:opacity-85 transition-opacity"
+          >
+            <div className="text-right hidden md:block">
+              <p className="text-sm font-semibold text-white leading-tight">{user?.name || 'User'}</p>
+              <p className="text-xs text-[#a0a0a0] capitalize">{user?.role || 'Student'}</p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary/50 p-[2px]">
+              <div className="w-full h-full rounded-full bg-background overflow-hidden flex items-center justify-center relative">
+                {user?.avatar ? (
+                  <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+                ) : (
+                  <span className="text-white font-bold text-sm">
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           
-          <div className="absolute top-full right-6 pt-2 hidden group-hover:block">
-            <div className="bg-card border border-border rounded-xl shadow-xl w-48 py-2">
+          {showDropdown && (
+            <div className="absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-2xl w-52 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                <div className="px-4 py-2 border-b border-border mb-2">
+                 <p className="text-[11px] text-[#a0a0a0] uppercase tracking-wider font-bold">Signed in as</p>
                  <p className="text-sm text-white font-medium truncate">{user?.email}</p>
                </div>
-               <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors cursor-pointer">
+               <button 
+                 onClick={() => {
+                   setShowDropdown(false);
+                   logout();
+                 }} 
+                 className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors flex items-center gap-2 cursor-pointer"
+               >
                  Sign Out
                </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

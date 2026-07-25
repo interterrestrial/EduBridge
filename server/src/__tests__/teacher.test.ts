@@ -25,16 +25,51 @@ describe('teacher endpoints', () => {
     const r = await request(app).get('/api/teacher/heatmap').set('Authorization', `Bearer ${s.body.token}`);
     expect(r.status).toBe(403);
   });
-  it('returns heatmap for teacher', async () => {
+
+  it('returns empty or filtered heatmap for teacher before enrollment', async () => {
     const r = await request(app).get('/api/teacher/heatmap').set('Authorization', `Bearer ${teacherToken}`);
     expect(r.status).toBe(200);
     expect(r.body.summary).toBeDefined();
+    const rosterIds = r.body.studentRoster.map((st: any) => st.id);
+    expect(rosterIds).not.toContain(studentId);
   });
+
+  it('lists unassigned students including newly registered pupil', async () => {
+    const r = await request(app).get('/api/teacher/students/unassigned').set('Authorization', `Bearer ${teacherToken}`);
+    expect(r.status).toBe(200);
+    const ids = r.body.students.map((st: any) => st.id);
+    expect(ids).toContain(studentId);
+  });
+
+  it('enrolls a student into the classroom', async () => {
+    const r = await request(app).post('/api/teacher/students').set('Authorization', `Bearer ${teacherToken}`).send({
+      studentId,
+    });
+    expect(r.status).toBe(201);
+    expect(r.body.mapping.studentId).toBe(studentId);
+  });
+
+  it('returns student in heatmap after enrollment', async () => {
+    const r = await request(app).get('/api/teacher/heatmap').set('Authorization', `Bearer ${teacherToken}`);
+    expect(r.status).toBe(200);
+    const rosterIds = r.body.studentRoster.map((st: any) => st.id);
+    expect(rosterIds).toContain(studentId);
+  });
+
   it('requires noteId or quizId on push', async () => {
     const r = await request(app).post('/api/teacher/push-assignment').set('Authorization', `Bearer ${teacherToken}`).send({
       studentId, title: 'Read this',
     });
     expect(r.status).toBe(400);
+  });
+
+  it('unenrolls a student from the classroom', async () => {
+    const r = await request(app).delete(`/api/teacher/students/${studentId}`).set('Authorization', `Bearer ${teacherToken}`);
+    expect(r.status).toBe(200);
+
+    const heatmapRes = await request(app).get('/api/teacher/heatmap').set('Authorization', `Bearer ${teacherToken}`);
+    const rosterIds = heatmapRes.body.studentRoster.map((st: any) => st.id);
+    expect(rosterIds).not.toContain(studentId);
   });
 });
 

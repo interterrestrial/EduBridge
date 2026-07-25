@@ -15,7 +15,11 @@ import {
   Calendar,
   Play,
   Loader2,
-  Award
+  Award,
+  Copy,
+  Check,
+  Users,
+  GraduationCap
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -29,6 +33,15 @@ export default function StudentDashboard() {
   const [agenda, setAgenda] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const copyCode = () => {
+    if (user?.studentCode) {
+      navigator.clipboard.writeText(user.studentCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     if (studentId) {
@@ -74,6 +87,84 @@ export default function StudentDashboard() {
               <Link href="/ai-chat" className="bg-white/5 hover:bg-white/10 text-white px-6 py-2.5 rounded-xl font-medium transition-colors border border-border inline-flex items-center gap-2">
                 Ask AI Tutor <Bot className="w-4 h-4" />
               </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Enrollment & Teacher Mapping Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Student Code Card */}
+          <div className="bg-card border border-border rounded-2xl p-6 flex flex-col justify-between shadow-sm relative overflow-hidden">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-primary/10 p-2 rounded-xl text-primary"><GraduationCap className="w-5 h-5" /></div>
+                <h2 className="text-lg font-bold text-white font-heading">My Enrollment Code</h2>
+              </div>
+              <p className="text-xs text-[#a0a0a0] mb-4">
+                Share this unique code with your professor to get enrolled in their classroom. Once enrolled, your exams and teacher assignments will appear in your timetable!
+              </p>
+            </div>
+
+            <div className="bg-input border border-border rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-[#a0a0a0] block uppercase font-mono tracking-wider">Your Unique Code</span>
+                <span className="text-lg font-mono font-bold text-primary tracking-wider">{user?.studentCode || 'EB-100001'}</span>
+              </div>
+              <button
+                onClick={copyCode}
+                className="bg-primary/20 hover:bg-primary hover:text-white text-primary px-4 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? 'Copied!' : 'Copy Code'}
+              </button>
+            </div>
+          </div>
+
+          {/* Enrolled Teachers Card */}
+          <div className="bg-card border border-border rounded-2xl p-6 flex flex-col justify-between shadow-sm">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="bg-purple-500/10 p-2 rounded-xl text-purple-400"><Users className="w-5 h-5" /></div>
+                  <h2 className="text-lg font-bold text-white font-heading">My Professors & Subjects</h2>
+                </div>
+                <span className="text-xs text-[#a0a0a0] bg-white/5 px-2.5 py-1 rounded-full border border-border font-medium">
+                  {user?.teachersMapped?.length || 0} Enrolled
+                </span>
+              </div>
+              <p className="text-xs text-[#a0a0a0] mb-4">
+                Professors you are connected to. They can view your exam readiness and push custom study assignments.
+              </p>
+            </div>
+
+            <div className="space-y-2.5 max-h-[140px] overflow-y-auto pr-1">
+              {!user?.teachersMapped || user.teachersMapped.length === 0 ? (
+                <div className="bg-input/50 border border-dashed border-border rounded-xl p-4 text-center">
+                  <p className="text-xs text-[#a0a0a0]">You are not enrolled in any professor&apos;s roster yet.</p>
+                  <p className="text-[11px] text-primary mt-0.5">Provide your code above to get linked!</p>
+                </div>
+              ) : (
+                user.teachersMapped.map((mapping: any, idx: number) => {
+                  const teacherName = mapping?.teacher?.name || 'Professor';
+                  const subject = mapping?.teacher?.teacherProfile?.subject || mapping?.teacher?.teacherProfile?.department || 'General Curriculum';
+                  return (
+                    <div key={idx} className="bg-input border border-border rounded-xl p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">
+                          {teacherName.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-white leading-tight">{teacherName}</h4>
+                          <span className="text-xs text-primary font-medium block mt-0.5">Subject: {subject}</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-bold uppercase">
+                        Active
+                      </span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

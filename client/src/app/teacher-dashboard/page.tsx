@@ -12,6 +12,9 @@ import {
   Target,
   Loader2,
   Send,
+  UserPlus,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
@@ -21,6 +24,69 @@ export default function TeacherDashboard() {
   const [heatmapData, setHeatmapData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // Classroom Enrollment state
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [unassignedStudents, setUnassignedStudents] = useState<{ id: string; name: string; email: string; studentCode?: string }[]>([]);
+  const [loadingUnassigned, setLoadingUnassigned] = useState(false);
+  const [enrollEmail, setEnrollEmail] = useState('');
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollingId, setEnrollingId] = useState<string | null>(null);
+
+  const fetchUnassigned = async () => {
+    try {
+      setLoadingUnassigned(true);
+      const res = await api.get('/teacher/students/unassigned');
+      setUnassignedStudents(res.data.students || []);
+    } catch (err) {
+      console.error('Error fetching unassigned students:', err);
+    } finally {
+      setLoadingUnassigned(false);
+    }
+  };
+
+  const handleOpenEnrollModal = () => {
+    setShowEnrollModal(true);
+    fetchUnassigned();
+  };
+
+  const handleEnrollStudent = async (studentId?: string, inputVal?: string) => {
+    try {
+      if (studentId) setEnrollingId(studentId);
+      else setEnrolling(true);
+
+      const payload: any = {};
+      if (studentId) {
+        payload.studentId = studentId;
+      } else if (inputVal) {
+        if (inputVal.includes('@')) {
+          payload.email = inputVal;
+        } else {
+          payload.studentCode = inputVal;
+        }
+      }
+
+      await api.post('/teacher/students', payload);
+      if (inputVal) setEnrollEmail('');
+      await fetchClassroomData();
+      await fetchUnassigned();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to enroll student');
+    } finally {
+      setEnrolling(false);
+      setEnrollingId(null);
+    }
+  };
+
+  const handleUnenroll = async (studentId: string, name: string) => {
+    if (!confirm(`Are you sure you want to remove ${name} from your classroom?`)) return;
+    try {
+      await api.delete(`/teacher/students/${studentId}`);
+      await fetchClassroomData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to remove student');
+    }
+  };
 
   const fetchClassroomData = async () => {
     try {
@@ -51,7 +117,9 @@ export default function TeacherDashboard() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="font-heading text-3xl font-bold text-white mb-2">Teacher Command Center 👋</h1>
+              <h1 className="font-heading text-3xl font-bold text-white mb-2">
+                {user?.name || 'Teacher'} • <span className="text-primary font-normal">{user?.teacherProfile?.subject || user?.teacherProfile?.department || 'Design & Analysis of Algorithms'}</span> 👋
+              </h1>
               <p className="text-[#a0a0a0] max-w-xl">
                 Monitor class weak topic heatmaps, track student attendance, and push targeted remedial study materials directly to struggling students' agendas.
               </p>
@@ -136,7 +204,16 @@ export default function TeacherDashboard() {
         {/* Student Roster Table (Exam-Aware) */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden space-y-4 shadow-sm">
           <div className="p-6 border-b border-border bg-input/50 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">Student Roster</h2>
+            <div>
+              <h2 className="text-xl font-bold text-white">Student Roster</h2>
+              <p className="text-xs text-[#a0a0a0]">Only students mapped to your classroom appear below.</p>
+            </div>
+            <button
+              onClick={handleOpenEnrollModal}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <UserPlus className="w-4 h-4" /> Enroll Student
+            </button>
           </div>
 
           <div className="overflow-x-auto">
@@ -153,7 +230,23 @@ export default function TeacherDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {roster.map((st: any) => {
+                {roster.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-[#a0a0a0]">
+                      <div className="max-w-md mx-auto space-y-3">
+                        <p className="text-base font-semibold text-white">No students enrolled yet</p>
+                        <p className="text-xs">You haven't added any students to your classroom. Click "+ Enroll Student" above to start mapping students and viewing their mastery analytics!</p>
+                        <button
+                          onClick={handleOpenEnrollModal}
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <UserPlus className="w-4 h-4" /> Enroll Student
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  roster.map((st: any) => {
                   const gapColor = st.gapStatus === 'Surface Practice'
                     ? 'bg-red-500/20 text-red-400 border-red-500/30'
                     : st.gapStatus === 'Exam Strong'
@@ -165,7 +258,10 @@ export default function TeacherDashboard() {
                   return (
                     <tr key={st.id} className="hover:bg-white/5 transition-colors">
                       <td className="p-4 font-semibold text-white">
-                        {st.name}
+                        <div className="flex items-center gap-2">
+                          <span>{st.name}</span>
+                          <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-mono font-bold">{st.studentCode || '—'}</span>
+                        </div>
                         <div className="text-xs font-normal text-[#a0a0a0]">{st.email}</div>
                       </td>
                       <td className="p-4 text-right font-bold text-white">{st.quizAccuracy ?? '—'}%</td>
@@ -189,20 +285,118 @@ export default function TeacherDashboard() {
                         </span>
                       </td>
                       <td className="p-4 text-right">
-                        <button
-                          onClick={() => router.push(`/teacher-push?studentId=${st.id}`)}
-                          className="bg-primary/20 hover:bg-primary hover:text-white text-primary border border-primary/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
-                        >
-                          <Send className="w-3.5 h-3.5" /> Push
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => router.push(`/teacher-push?studentId=${st.id}`)}
+                            className="bg-primary/20 hover:bg-primary hover:text-white text-primary border border-primary/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <Send className="w-3.5 h-3.5" /> Push
+                          </button>
+                          <button
+                            onClick={() => handleUnenroll(st.id, st.name)}
+                            title="Remove student from classroom"
+                            className="bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 border border-red-500/20 p-1.5 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
-                })}
+                }))}
               </tbody>
             </table>
           </div>
         </div>
+
+        {/* Enroll Student Modal */}
+        {showEnrollModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
+              <div className="flex justify-between items-center border-b border-border pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary/20 p-2 rounded-xl text-primary"><UserPlus className="w-5 h-5" /></div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Enroll Student</h3>
+                    <p className="text-xs text-[#a0a0a0]">Add students to your classroom to monitor their mastery & push notes.</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowEnrollModal(false)} className="text-[#a0a0a0] hover:text-white p-1 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Enroll by code or email */}
+              <div className="space-y-3 bg-input/50 p-4 rounded-xl border border-border">
+                <label className="text-xs font-bold uppercase text-[#a0a0a0] block">Enroll by Student Code or Email Address</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="EB-100001 or student@edubridge.edu"
+                    value={enrollEmail}
+                    onChange={(e) => setEnrollEmail(e.target.value)}
+                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-primary"
+                  />
+                  <button
+                    onClick={() => handleEnrollStudent(undefined, enrollEmail)}
+                    disabled={!enrollEmail.trim() || enrolling}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} Enroll
+                  </button>
+                </div>
+                <p className="text-[11px] text-[#a0a0a0]">Ask your students for their unique Enrollment Code (found on their dashboard) or enter their registered email address.</p>
+              </div>
+
+              {/* Unassigned student list */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold uppercase text-[#a0a0a0]">Available Students ({unassignedStudents.length})</label>
+                  <button onClick={fetchUnassigned} className="text-xs text-primary hover:underline">Refresh List</button>
+                </div>
+                {loadingUnassigned ? (
+                  <div className="py-8 text-center text-[#a0a0a0] flex items-center justify-center gap-2 text-sm">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" /> Loading unassigned students...
+                  </div>
+                ) : unassignedStudents.length === 0 ? (
+                  <div className="py-6 text-center bg-input/20 border border-border rounded-xl p-4 text-xs text-[#a0a0a0]">
+                    All registered students are already enrolled in your classroom!
+                  </div>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto space-y-2 pr-1 divide-y divide-border/50">
+                    {unassignedStudents.map((st) => (
+                      <div key={st.id} className="flex items-center justify-between pt-2 first:pt-0">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-white">{st.name}</p>
+                            <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-mono font-bold">{st.studentCode || '—'}</span>
+                          </div>
+                          <p className="text-xs text-[#a0a0a0]">{st.email}</p>
+                        </div>
+                        <button
+                          onClick={() => handleEnrollStudent(st.id)}
+                          disabled={enrollingId === st.id}
+                          className="bg-white/10 hover:bg-primary hover:text-white text-foreground px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                        >
+                          {enrollingId === st.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />} Enroll
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-2 border-t border-border">
+                <button
+                  onClick={() => setShowEnrollModal(false)}
+                  className="bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </DashboardLayout>

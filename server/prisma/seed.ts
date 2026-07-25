@@ -42,6 +42,7 @@ async function main() {
       email: 'student@edubridge.edu',
       password: studentPassword,
       role: 'student',
+      studentCode: 'EB-100001',
       studentProfile: { create: { institution: 'Tech Institute of Engineering', course: 'Computer Science & Data Analytics', semester: '6', totalStudyHours: 42 } },
     },
   });
@@ -54,7 +55,7 @@ async function main() {
       email: 'teacher@edubridge.edu',
       password: teacherPassword,
       role: 'teacher',
-      teacherProfile: { create: { organization: 'Tech Institute', department: 'Computer Science', specialization: 'Algorithms', experience: 12 } },
+      teacherProfile: { create: { organization: 'Tech Institute', department: 'Computer Science', subject: 'Design & Analysis of Algorithms', specialization: 'Algorithms', experience: 12 } },
     },
   });
 
@@ -98,130 +99,7 @@ async function main() {
     data: { quizId: yashQuiz.id, studentId: student.id, score: 1, totalQuestions: 1, accuracy: 100, weakTopicsJson: JSON.stringify([]) },
   });
 
-  // ===========================================================================
-  // --- 5. SYNTHETIC STUDENTS (generated, not hardcoded) ---
-  // Each gets: a profile, 2-4 notes, 1-3 quizzes with attempts (varied accuracy
-  // → different mastery levels + weak topics → populates the heatmap), and
-  // attendance records. This makes the teacher dashboard look alive on demo day.
-  // ===========================================================================
-
-  const NUM_SYNTHETIC = 12;
-  console.log(`   Generating ${NUM_SYNTHETIC} synthetic students...`);
-
-  for (let i = 0; i < NUM_SYNTHETIC; i++) {
-    const firstName = pick(FIRST_NAMES);
-    const lastName = pick(LAST_NAMES);
-    const fullName = `${firstName} ${lastName}`;
-    const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@demo.edubridge.edu`;
-
-    // Skip if email already exists (idempotency on re-run after deleteMany missed it)
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) continue;
-
-    // Assign a skill tier so we get a spread: some excelling, some on track, some struggling
-    const tier = rand();
-    const baseAccuracy = tier < 0.25 ? randInt(35, 55)   // struggling
-                        : tier < 0.65 ? randInt(55, 75)   // on track
-                        : randInt(78, 95);                 // excelling
-
-    const studyHours = randInt(5, 60);
-    const semester = String(randInt(3, 8));
-
-    const synthStudent = await prisma.user.create({
-      data: {
-        name: fullName,
-        email,
-        password: studentPassword,
-        role: 'student',
-        studentProfile: { create: { institution: 'Tech Institute of Engineering', course: 'Computer Science & Data Analytics', semester, totalStudyHours: studyHours } },
-      },
-    });
-
-    // 2-4 notes across random subjects
-    const noteCount = randInt(2, 4);
-    const studentNotes: { id: string }[] = [];
-    for (let n = 0; n < noteCount; n++) {
-      const subject = pick(SUBJECTS);
-      const topicList = TOPICS[subject as keyof typeof TOPICS];
-      const topic = pick(topicList);
-      const note = await prisma.note.create({
-        data: {
-          title: `${topic} — Study Notes`,
-          filePath: `uploads/synth_${i}_${n}.txt`,
-          fileType: '.txt',
-          studentId: synthStudent.id,
-        },
-      });
-      studentNotes.push(note);
-    }
-
-    // 1-3 quizzes with attempts — varied accuracy creates weak topics
-    const quizCount = randInt(1, 3);
-    for (let q = 0; q < quizCount; q++) {
-      const subject = pick(SUBJECTS);
-      const topicList = TOPICS[subject as keyof typeof TOPICS];
-      const quizTopic = pick(topicList);
-
-      // Build a 5-question quiz
-      const questions = Array.from({ length: 5 }, (_, qi) => {
-        const qt = pick(topicList);
-        return {
-          question: `Question about ${qt} (#${qi + 1})`,
-          optionA: 'Option A', optionB: 'Option B', optionC: 'Option C', optionD: 'Option D',
-          correctAnswer: 'A',
-          explanation: `${qt} concept explanation.`,
-          topic: qt,
-        };
-      });
-
-      const quiz = await prisma.quiz.create({
-        data: {
-          title: `${subject} — Practice Quiz ${q + 1}`,
-          difficulty: pick(['easy', 'medium', 'hard']),
-          questionsJson: JSON.stringify(questions),
-          studentId: synthStudent.id,
-        },
-      });
-
-      // Simulate the attempt: some questions right, some wrong (accuracy ~ baseAccuracy ± jitter)
-      const jitter = randInt(-10, 10);
-      const accuracy = Math.max(0, Math.min(100, baseAccuracy + jitter));
-      const correct = Math.round((accuracy / 100) * questions.length);
-      const wrong = questions.length - correct;
-
-      // Weak topics = topics from the questions they got wrong
-      const weakTopics = questions.slice(correct).map((q) => q.topic);
-      // Deduplicate
-      const uniqueWeak = [...new Set(weakTopics)];
-
-      await prisma.quizAttempt.create({
-        data: {
-          quizId: quiz.id,
-          studentId: synthStudent.id,
-          score: correct,
-          totalQuestions: questions.length,
-          accuracy,
-          weakTopicsJson: JSON.stringify(uniqueWeak.length > 0 ? uniqueWeak : ['Fundamentals']),
-        },
-      });
-    }
-
-    // Attendance: 5-10 records, ~80% present
-    const attendanceCount = randInt(5, 10);
-    for (let a = 0; a < attendanceCount; a++) {
-      const date = `2026-0${randInt(1, 7)}-${String(randInt(1, 28)).padStart(2, '0')}`;
-      await prisma.attendanceRecord.create({
-        data: {
-          studentId: synthStudent.id,
-          subject: pick(SUBJECTS),
-          status: rand() < 0.8 ? 'present' : 'absent',
-          date,
-        },
-      });
-    }
-  }
-
-  // --- 6. Exams & Exam Scores (teacher creates 2-3 exams, all students get scores) ---
+  // --- 5. Exams & Exam Scores (teacher creates 3 exams, primary student gets scores) ---
   const EXAMS = [
     { title: 'Midterm Exam 1', subject: 'Data Preprocessing & Analytics', maxMarks: 100, examDate: '2026-07-15' },
     { title: 'Midterm Exam 2', subject: 'Design & Analysis of Algorithms', maxMarks: 100, examDate: '2026-07-22' },
@@ -261,23 +139,6 @@ async function main() {
     }
   }
 
-  // --- 7. Teacher pushes a sample assignment to Yash (demo of the feature) ---
-  const existingPush = await prisma.teacherPushAssignment.findFirst({
-    where: { teacherId: teacher.id, studentId: student.id },
-  });
-  if (!existingPush) {
-    await prisma.teacherPushAssignment.create({
-      data: {
-        teacherId: teacher.id,
-        studentId: student.id,
-        title: 'Review B+ Tree Indexing',
-        noteId: notes[3].id,
-        dueDate: 'End of Week',
-        status: 'pending',
-      },
-    });
-  }
-
   // Final count
   const totalStudents = await prisma.user.count({ where: { role: 'student' } });
   const totalQuizzes = await prisma.quiz.count();
@@ -286,11 +147,11 @@ async function main() {
   const totalExamScores = await prisma.examScore.count();
 
   console.log(`✅ Seed complete!`);
-  console.log(`   📊 ${totalStudents} students (1 primary + ${NUM_SYNTHETIC} synthetic)`);
+  console.log(`   📊 ${totalStudents} clean student account(s) (Student Code: EB-100001)`);
   console.log(`   📝 ${totalQuizzes} quizzes, ${totalAttempts} quiz attempts`);
   console.log(`   📋 ${totalExams} exams, ${totalExamScores} exam scores`);
   console.log(`   🔑 Login: student@edubridge.edu / demo1234  (primary student)`);
-  console.log(`   🔑 Login: teacher@edubridge.edu / demo1234  (teacher — see full roster + heatmap + exams)`);
+  console.log(`   🔑 Login: teacher@edubridge.edu / demo1234  (teacher — empty roster ready for enrollment!)`);
 }
 
 main()

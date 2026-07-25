@@ -43,9 +43,16 @@ export const getStudentAnalytics = asyncHandler(async (req: AuthRequest, res: Re
 });
 
 export const getTeacherInsights = asyncHandler(async (req: AuthRequest, res: Response) => {
-  // Reserved for teacher role; route-level guard handles authorization.
+  if (!req.user || req.user.role !== 'teacher') {
+    res.status(403).json({ error: 'Forbidden: teacher role required' });
+    return;
+  }
+  const teacherId = req.user.id;
   const students = await prisma.user.findMany({
-    where: { role: 'student' },
+    where: {
+      role: 'student',
+      teachersMapped: { some: { teacherId } },
+    },
     include: { quizAttempts: true, studentProfile: true },
   });
 

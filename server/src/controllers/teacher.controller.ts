@@ -9,7 +9,10 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
   const teacherId = req.user.id;
 
   const students = await prisma.user.findMany({
-    where: { role: 'student' },
+    where: {
+      role: 'student',
+      teachersMapped: { some: { teacherId } },
+    },
     include: {
       quizAttempts: true,
       attendance: true,
@@ -47,6 +50,7 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
       id: student.id,
       name: student.name,
       email: student.email,
+      studentCode: student.studentCode || '—',
       quizAccuracy,
       examAverage: examPct,
       masteryScore,
@@ -92,9 +96,15 @@ export const pushMaterialToStudent = asyncHandler(async (req: AuthRequest, res: 
   throwIfMissing({ studentId, title });
   if (!noteId && !quizId) throw new ApiError(400, 'Either noteId or quizId is required');
 
-  // Verify the student exists
-  const student = await prisma.user.findFirst({ where: { id: studentId, role: 'student' } });
-  if (!student) throw new ApiError(404, 'Target student not found');
+  // Verify the student exists and is mapped to this teacher
+  const student = await prisma.user.findFirst({
+    where: {
+      id: studentId,
+      role: 'student',
+      teachersMapped: { some: { teacherId } },
+    },
+  });
+  if (!student) throw new ApiError(404, 'Target student not found in your classroom');
 
   const assignment = await prisma.teacherPushAssignment.create({
     data: {
@@ -149,8 +159,14 @@ export const getPushHistory = asyncHandler(async (req: AuthRequest, res: Respons
  */
 export const getAllNotes = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+  const teacherId = req.user.id;
 
   const notes = await prisma.note.findMany({
+    where: {
+      student: {
+        teachersMapped: { some: { teacherId } },
+      },
+    },
     select: {
       id: true,
       title: true,
@@ -170,8 +186,14 @@ export const getAllNotes = asyncHandler(async (req: AuthRequest, res: Response) 
  */
 export const getAllQuizzes = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+  const teacherId = req.user.id;
 
   const quizzes = await prisma.quiz.findMany({
+    where: {
+      student: {
+        teachersMapped: { some: { teacherId } },
+      },
+    },
     select: {
       id: true,
       title: true,
@@ -196,8 +218,13 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
   const studentId = req.params.studentId as string;
   if (!studentId) throw new ApiError(400, 'studentId is required');
 
+  const teacherId = req.user.id;
   const student = await prisma.user.findFirst({
-    where: { id: studentId, role: 'student' },
+    where: {
+      id: studentId,
+      role: 'student',
+      teachersMapped: { some: { teacherId } },
+    },
     include: {
       studentProfile: true,
       quizAttempts: {
@@ -279,4 +306,80 @@ export const getStudentDetail = asyncHandler(async (req: AuthRequest, res: Respo
       notes: student.notes,
     },
   });
+});
+
+/**
+ * Lists all students not currently mapped to this teacher (for enrollment modal).
+ */
+export const getUnassignedStudents = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+  const teacherId = req.user.id;
+
+  const students = await prisma.user.findMany({
+    where: {
+      role: 'student',
+      NOT: {
+        teachersMapped: { some: { teacherId } },
+      },
+    },
+    select: { id: true, name: true, email: true, studentCode: true },
+    orderBy: { name: 'asc' },
+  });
+
+  res.status(200).json({ students });
+});
+
+/**
+ * Maps/enrolls a student into the teacher's classroom.
+ */
+export const addStudentToClassroom = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+  const teacherId = req.user.id;
+  const { studentId, email, studentCode } = req.body;
+
+  if (!studentId && !email && !studentCode) throw new ApiError(400, 'studentCode, email, or studentId is required');
+
+  let targetId = studentId;
+  if (studentCode) {
+    const studentByCode = await prisma.user.findFirst({
+      where: { studentCode: String(studentCode).trim().toUpperCase(), role: 'student' },
+    });
+    if (!studentByCode) throw new ApiError(404, 'No student found with that Enrollment Code. Please check the code and try again.');
+    targetId = studentByCode.id;
+  } else if (!targetId && email) {
+    const studentByEmail = await prisma.user.findFirst({
+      where: { email: String(email).trim().toLowerCase(), role: 'student' },
+    });
+    if (!studentByEmail) throw new ApiError(404, 'No student account found with that email address');
+    targetId = studentByEmail.id;
+  } else if (targetId) {
+    const studentById = await prisma.user.findFirst({
+      where: { id: targetId, role: 'student' },
+    });
+    if (!studentById) throw new ApiError(404, 'Student account not found');
+  }
+
+  const mapping = await prisma.teacherStudent.upsert({
+    where: { teacherId_studentId: { teacherId, studentId: targetId } },
+    update: {},
+    create: { teacherId, studentId: targetId },
+  });
+
+  res.status(201).json({ message: 'Student enrolled in your classroom!', mapping });
+});
+
+/**
+ * Removes/unmaps a student from the teacher's classroom.
+ */
+export const removeStudentFromClassroom = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
+  const teacherId = req.user.id;
+  const studentId = req.params.studentId as string;
+  if (!studentId) throw new ApiError(400, 'studentId is required');
+
+  await prisma.teacherStudent.deleteMany({
+    where: { teacherId, studentId },
+  });
+
+  res.status(200).json({ message: 'Student removed from your classroom' });
 });
