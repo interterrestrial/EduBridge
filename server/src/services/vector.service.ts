@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { EmbeddingService } from './embedding.service';
 import { AI_CONFIG } from '../config/ai.config';
+import prisma from '../prisma';
 
 export class VectorService {
   private embeddingService: EmbeddingService;
@@ -63,33 +64,56 @@ export class VectorService {
     noteId?: string,
     noteIds?: string[]
   ): Promise<Document[]> {
-    const indexPath = this.getIndexPath(studentId);
-    const indexFile = path.join(indexPath, 'faiss.index');
-
-    if (!fs.existsSync(indexFile)) {
-      return [];
-    }
-
-    const store = await FaissStore.load(
-      indexPath,
-      this.embeddingService
-    );
-
-    let filter: ((doc: Document) => boolean) | undefined = undefined;
-
-    if (noteIds && noteIds.length > 0) {
-      const set = new Set(noteIds);
-      filter = (doc: Document) => set.has(doc.metadata.documentId);
-    } else if (noteId) {
-      filter = (doc: Document) => doc.metadata.documentId === noteId;
-    }
+    const targetIds = new Set<string>([studentId]);
 
     try {
-      return await store.similaritySearch(query, topK, filter);
-    } catch (err: any) {
-      console.warn('[VectorService] FAISS similarity search warning (empty or invalid index):', err?.message || err);
-      return [];
+      if (noteId) {
+        const note = await prisma.note.findUnique({ where: { id: noteId }, select: { studentId: true } });
+        if (note) targetIds.add(note.studentId);
+      } else if (noteIds && noteIds.length > 0) {
+        const notes = await prisma.note.findMany({ where: { id: { in: noteIds } }, select: { studentId: true } });
+        notes.forEach((n) => targetIds.add(n.studentId));
+      } else {
+        const [mappings, pushAsgns] = await Promise.all([
+          prisma.teacherStudent.findMany({ where: { studentId }, select: { teacherId: true } }),
+          prisma.teacherPushAssignment.findMany({ where: { studentId }, select: { teacherId: true } }),
+        ]);
+        mappings.forEach((m) => targetIds.add(m.teacherId));
+        pushAsgns.forEach((p) => targetIds.add(p.teacherId));
+      }
+    } catch (dbErr) {
+      console.warn('[VectorService] Could not fetch teacher mappings for vector search:', dbErr);
     }
+
+    const allDocs: Document[] = [];
+
+    for (const targetId of targetIds) {
+      const indexPath = this.getIndexPath(targetId);
+      const indexFile = path.join(indexPath, 'faiss.index');
+
+      if (!fs.existsSync(indexFile)) {
+        continue;
+      }
+
+      try {
+        const store = await FaissStore.load(indexPath, this.embeddingService);
+        let filter: ((doc: Document) => boolean) | undefined = undefined;
+
+        if (noteIds && noteIds.length > 0) {
+          const set = new Set(noteIds);
+          filter = (doc: Document) => set.has(doc.metadata.documentId);
+        } else if (noteId) {
+          filter = (doc: Document) => doc.metadata.documentId === noteId;
+        }
+
+        const docs = await store.similaritySearch(query, topK, filter);
+        allDocs.push(...docs);
+      } catch (err: any) {
+        console.warn(`[VectorService] FAISS similarity search warning for ${targetId}:`, err?.message || err);
+      }
+    }
+
+    return allDocs.slice(0, topK);
   }
 
   async deleteStudentIndex(studentId: string): Promise<void> {

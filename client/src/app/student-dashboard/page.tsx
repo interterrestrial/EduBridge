@@ -210,9 +210,13 @@ export default function StudentDashboard() {
 
                   <button
                     onClick={() => {
-                      if (item.actionType === 'read_note') router.push('/notes');
-                      else if (item.actionType === 'take_quiz') router.push('/quizzes');
-                      else router.push('/flashcards');
+                      if (item.actionType === 'read_note') {
+                        if (item.noteId) router.push(`/ai-chat?noteId=${item.noteId}`);
+                        else router.push('/notes');
+                      } else if (item.actionType === 'take_quiz') {
+                        if (item.quizId) router.push(`/quizzes?quizId=${item.quizId}`);
+                        else router.push('/quizzes');
+                      } else router.push('/flashcards');
                     }}
                     className="w-full bg-primary/20 hover:bg-primary hover:text-white text-primary border border-primary/30 rounded-lg py-2 text-xs font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   >

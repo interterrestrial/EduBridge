@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Plus, CheckCircle2, XCircle, Loader2, Award, AlertTriangle, FileText, X, Send } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 
-export default function QuizzesPage() {
+function QuizzesContent() {
   const { user } = useAuth();
   const studentId = user?.id || 'student_1';
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryQuizId = searchParams?.get('quizId');
 
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
@@ -55,6 +57,17 @@ export default function QuizzesPage() {
       fetchNotes();
     }
   }, [studentId]);
+
+  useEffect(() => {
+    if (queryQuizId && quizzes.length > 0) {
+      const found = quizzes.find((q: any) => q.id === queryQuizId);
+      if (found && (!activeQuiz || activeQuiz.id !== queryQuizId)) {
+        setActiveQuiz(found);
+        setAnswers({});
+        setEvaluation(null);
+      }
+    }
+  }, [queryQuizId, quizzes]);
 
   const handleGenerate = async () => {
     try {
@@ -377,5 +390,19 @@ export default function QuizzesPage() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function QuizzesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center text-white">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <QuizzesContent />
+    </Suspense>
   );
 }

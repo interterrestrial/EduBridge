@@ -61,7 +61,13 @@ export const getNotes = asyncHandler(async (req: AuthRequest, res: Response) => 
     return res.status(200).json({ notes });
   }
   const notes = await prisma.note.findMany({
-    where: { studentId },
+    where: {
+      OR: [
+        { studentId },
+        { pushAssignments: { some: { studentId } } },
+        { student: { studentsMapped: { some: { studentId } } } },
+      ],
+    },
     include: { folder: true, student: { select: { id: true, name: true, role: true } } },
     orderBy: { createdAt: 'desc' },
   });

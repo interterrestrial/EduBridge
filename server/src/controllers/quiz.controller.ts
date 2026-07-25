@@ -34,8 +34,17 @@ export const submitQuiz = asyncHandler(async (req: AuthRequest, res: Response) =
   const studentId = resolveStudentId(req);
   const { quizId, answers } = req.body;
   throwIfMissing({ quizId, answers });
-  const quiz = await prisma.quiz.findFirst({ where: { id: quizId, studentId } });
-  if (!quiz) throw new ApiError(404, 'Quiz not found or not owned by you');
+  const quiz = await prisma.quiz.findFirst({
+    where: {
+      id: quizId,
+      OR: [
+        { studentId },
+        { pushAssignments: { some: { studentId } } },
+        { student: { studentsMapped: { some: { studentId } } } },
+      ],
+    },
+  });
+  if (!quiz) throw new ApiError(404, 'Quiz not found or not accessible to you');
   const questions = JSON.parse(quiz.questionsJson);
   const result = evalService.evaluateQuizAttempt({ quizId, studentId, answers }, questions);
   const attempt = await prisma.quizAttempt.create({
@@ -60,7 +69,17 @@ export const getQuizzes = asyncHandler(async (req: AuthRequest, res: Response) =
     const formatted = quizzes.map((q) => ({ id: q.id, title: q.title, difficulty: q.difficulty, questions: JSON.parse(q.questionsJson), attemptCount: q.attempts.length, createdAt: q.createdAt, student: q.student }));
     return res.status(200).json({ quizzes: formatted });
   }
-  const quizzes = await prisma.quiz.findMany({ where: { studentId }, orderBy: { createdAt: 'desc' }, include: { attempts: true, student: { select: { id: true, name: true, role: true } } } });
+  const quizzes = await prisma.quiz.findMany({
+    where: {
+      OR: [
+        { studentId },
+        { pushAssignments: { some: { studentId } } },
+        { student: { studentsMapped: { some: { studentId } } } },
+      ],
+    },
+    orderBy: { createdAt: 'desc' },
+    include: { attempts: true, student: { select: { id: true, name: true, role: true } } },
+  });
   const formatted = quizzes.map((q) => ({ id: q.id, title: q.title, difficulty: q.difficulty, questions: JSON.parse(q.questionsJson), attemptCount: q.attempts.length, createdAt: q.createdAt, student: q.student }));
   res.status(200).json({ quizzes: formatted });
 });
