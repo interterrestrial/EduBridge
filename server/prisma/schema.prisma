@@ -38,6 +38,7 @@ model User {
   examScores       ExamScore[] @relation("StudentExamScores")
   studentsMapped   TeacherStudent[] @relation("TeacherStudents")
   teachersMapped   TeacherStudent[] @relation("StudentTeachers")
+  notifications    Notification[]   @relation("UserNotifications")
 }
 
 model StudentProfile {
@@ -268,5 +269,20 @@ model TeacherStudent {
   @@unique([teacherId, studentId])
   @@index([teacherId])
   @@index([studentId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   // e.g. "ASSIGNMENT_PUSHED", "TASK_COMPLETED", "EXAM_GRADED"
+  link      String?  // Optional navigation target
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([createdAt])
 }
 

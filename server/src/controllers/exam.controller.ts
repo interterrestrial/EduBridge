@@ -149,6 +149,18 @@ export const saveScores = asyncHandler(async (req: AuthRequest, res: Response) =
       update: { marks: clampedMarks },
       create: { examId, studentId, marks: clampedMarks },
     });
+
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: studentId,
+          title: 'Exam Graded',
+          message: `Your teacher posted your score for "${exam.title}": ${clampedMarks}/${exam.maxMarks} marks!`,
+          type: 'EXAM_GRADED',
+          link: '/progress',
+        },
+      });
+    } catch (e) {}
   }
 
   res.status(200).json({ message: 'Scores saved successfully' });
@@ -176,6 +188,18 @@ export const editScore = asyncHandler(async (req: AuthRequest, res: Response) =>
     update: { marks: clampedMarks },
     create: { examId, studentId, marks: clampedMarks },
   });
+
+  try {
+    await prisma.notification.create({
+      data: {
+        userId: studentId,
+        title: 'Exam Score Updated',
+        message: `Your teacher updated your score for "${exam.title}": ${clampedMarks}/${exam.maxMarks} marks!`,
+        type: 'EXAM_GRADED',
+        link: '/progress',
+      },
+    });
+  } catch (e) {}
 
   res.status(200).json({ message: 'Score updated', score: { ...score, percentage: Math.round((score.marks / exam.maxMarks) * 100) } });
 });

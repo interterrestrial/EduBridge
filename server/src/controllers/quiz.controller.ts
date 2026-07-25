@@ -50,6 +50,49 @@ export const submitQuiz = asyncHandler(async (req: AuthRequest, res: Response) =
   const attempt = await prisma.quizAttempt.create({
     data: { quizId, studentId, score: result.score, totalQuestions: result.totalQuestions, accuracy: result.accuracy, weakTopicsJson: JSON.stringify(result.weakTopics) },
   });
+
+  try {
+    const student = await prisma.user.findUnique({ where: { id: studentId }, select: { name: true } });
+    const studentName = student?.name || 'A student';
+    const teacherIds = new Set<string>();
+    if (quiz.studentId !== studentId) {
+      teacherIds.add(quiz.studentId);
+    }
+    const pushAsgns = await prisma.teacherPushAssignment.findMany({
+      where: { quizId, studentId },
+      select: { teacherId: true, id: true },
+    });
+    pushAsgns.forEach((p) => teacherIds.add(p.teacherId));
+
+    if (teacherIds.size === 0) {
+      const mappings = await prisma.teacherStudent.findMany({
+        where: { studentId },
+        select: { teacherId: true },
+      });
+      mappings.forEach((m) => teacherIds.add(m.teacherId));
+    }
+
+    if (teacherIds.size > 0) {
+      await prisma.notification.createMany({
+        data: Array.from(teacherIds).map((tid) => ({
+          userId: tid,
+          title: 'Assessment Completed',
+          message: `${studentName} completed quiz "${quiz.title}" with a score of ${result.score}/${result.totalQuestions} (${result.accuracy}%)!`,
+          type: 'TASK_COMPLETED',
+          link: '/teacher-dashboard',
+        })),
+      });
+      if (pushAsgns.length > 0) {
+        await prisma.teacherPushAssignment.updateMany({
+          where: { quizId, studentId },
+          data: { status: 'completed' },
+        });
+      }
+    }
+  } catch (notifErr) {
+    console.error('Failed to send quiz completion notification:', notifErr);
+  }
+
   res.status(200).json({ attemptId: attempt.id, score: result.score, totalQuestions: result.totalQuestions, accuracy: result.accuracy, evaluations: result.evaluations, weakTopics: result.weakTopics, strongTopics: result.strongTopics });
 });
 

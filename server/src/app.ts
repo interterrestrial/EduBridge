@@ -10,6 +10,7 @@ import analyticsRoutes from './routes/analytics.routes';
 import scheduleRoutes from './routes/schedule.routes';
 import teacherRoutes from './routes/teacher.routes';
 import healthRoutes from './routes/health.routes';
+import notificationRoutes from './routes/notification.routes';
 import { ApiError } from './utils/apiError';
 
 const app: Application = express();
@@ -36,6 +37,7 @@ app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/teacher', teacherRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'EduBridge API', time: new Date().toISOString() });

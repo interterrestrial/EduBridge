@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Bell, Search, Menu, PanelLeftOpen, GraduationCap } from 'lucide-react';
+import { Search, Menu, PanelLeftOpen, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Image from 'next/image';
+import NotificationBell from './NotificationBell';
 
 interface NavbarProps {
   isCollapsed?: boolean;
@@ -91,10 +92,7 @@ export default function Navbar({ isCollapsed, toggleCollapse }: NavbarProps) {
           />
         </div>
 
-        <button className="relative p-2 text-[#a0a0a0] hover:text-white rounded-full hover:bg-white/5 transition-colors">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-card"></span>
-        </button>
+        <NotificationBell />
 
         <div ref={dropdownRef} className="relative border-l border-border pl-6">
           <div 

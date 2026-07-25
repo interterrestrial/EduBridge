@@ -121,6 +121,20 @@ export const pushMaterialToStudent = asyncHandler(async (req: AuthRequest, res: 
         })
       )
     );
+
+    const teacherUser = await prisma.user.findUnique({ where: { id: teacherId }, select: { name: true } });
+    const teacherName = teacherUser?.name || 'Your Teacher';
+    const link = quizId ? `/quizzes?quizId=${quizId}` : (noteId ? `/ai-chat?noteId=${noteId}` : '/student-dashboard');
+    await prisma.notification.createMany({
+      data: students.map((s) => ({
+        userId: s.id,
+        title: 'New Assessment Assigned',
+        message: `Prof. ${teacherName} assigned a new task: "${title}"`,
+        type: 'ASSIGNMENT_PUSHED',
+        link,
+      })),
+    });
+
     return res.status(201).json({
       message: `Assignment successfully pushed to all ${students.length} students in your classroom!`,
       assignments,
@@ -148,6 +162,19 @@ export const pushMaterialToStudent = asyncHandler(async (req: AuthRequest, res: 
       status: 'pending',
     },
     include: { note: true, quiz: true },
+  });
+
+  const teacherUser = await prisma.user.findUnique({ where: { id: teacherId }, select: { name: true } });
+  const teacherName = teacherUser?.name || 'Your Teacher';
+  const link = quizId ? `/quizzes?quizId=${quizId}` : (noteId ? `/ai-chat?noteId=${noteId}` : '/student-dashboard');
+  await prisma.notification.create({
+    data: {
+      userId: studentId,
+      title: 'New Assessment Assigned',
+      message: `Prof. ${teacherName} assigned a new task: "${title}"`,
+      type: 'ASSIGNMENT_PUSHED',
+      link,
+    },
   });
 
   res.status(201).json({ message: 'Assignment pushed directly to student agenda!', assignment });

@@ -116,6 +116,34 @@ export const chatTutor = asyncHandler(async (req: AuthRequest, res: Response) =>
       sourcesJson: JSON.stringify(chatResponse.sources),
     },
   });
+
+  if (effectiveNoteId) {
+    try {
+      const pendingPush = await prisma.teacherPushAssignment.findMany({
+        where: { noteId: effectiveNoteId, studentId, status: 'pending' },
+        include: { note: true },
+      });
+      if (pendingPush.length > 0) {
+        const student = await prisma.user.findUnique({ where: { id: studentId }, select: { name: true } });
+        const studentName = student?.name || 'A student';
+        for (const push of pendingPush) {
+          await prisma.teacherPushAssignment.update({ where: { id: push.id }, data: { status: 'completed' } });
+          await prisma.notification.create({
+            data: {
+              userId: push.teacherId,
+              title: 'Study Task Completed',
+              message: `${studentName} started studying note "${push.note?.title || 'Course Material'}" with the AI Tutor!`,
+              type: 'TASK_COMPLETED',
+              link: '/teacher-dashboard',
+            },
+          });
+        }
+      }
+    } catch (pushErr) {
+      console.error('Failed to update note push status or send notification:', pushErr);
+    }
+  }
+
   res.status(200).json({ id: message.id, sessionId: activeSessionId, answer: chatResponse.answer, sources: chatResponse.sources, createdAt: message.createdAt });
 });
 
