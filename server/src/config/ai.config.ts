@@ -5,6 +5,6 @@ export const AI_CONFIG = {
   EMBEDDING_DIMENSIONS: 3072,
   CHUNK_SIZE: 600, // token target
   CHUNK_OVERLAP: 100, // token target
-  VECTOR_DB_DIR: './vector_db',
+  VECTOR_DB_DIR: process.env.VECTOR_DB_DIR || './vector_db',
   DEFAULT_TOP_K: 5,
 };
