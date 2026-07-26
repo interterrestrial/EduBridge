@@ -37,7 +37,6 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "pdf-parse": "^2.4.5",
-    "pdf-parse": "^2.4.5",
     "prisma": "^5.22.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
