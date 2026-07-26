@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -201,8 +202,20 @@ export default function TeacherDashboard() {
           </div>
 
           {loading ? (
-            <div className="py-8 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" /> Aggregating student topic quiz scores...
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-input border border-border p-4 rounded-xl space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-8" />
+                  </div>
+                  <Skeleton className="h-2 w-full" />
+                </div>
+              ))}
             </div>
           ) : heatmap.length === 0 ? (
             <div className="py-6 text-center text-[#a0a0a0]">
@@ -263,7 +276,19 @@ export default function TeacherDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {roster.length === 0 ? (
+                {loading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <tr key={`skel-${i}`}>
+                      <td className="p-4"><Skeleton className="h-10 w-48" /></td>
+                      <td className="p-4"><Skeleton className="h-5 w-12 ml-auto" /></td>
+                      <td className="p-4"><Skeleton className="h-5 w-12 ml-auto" /></td>
+                      <td className="p-4"><Skeleton className="h-5 w-12 ml-auto" /></td>
+                      <td className="p-4"><Skeleton className="h-5 w-16 mx-auto" /></td>
+                      <td className="p-4"><Skeleton className="h-6 w-20 rounded-full" /></td>
+                      <td className="p-4"><Skeleton className="h-8 w-40 ml-auto" /></td>
+                    </tr>
+                  ))
+                ) : roster.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-[#a0a0a0]">
                       <div className="max-w-md mx-auto space-y-3">

@@ -28,6 +28,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -193,8 +194,16 @@ export default function StudentDashboard() {
           </div>
 
           {loading ? (
-            <div className="py-6 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" /> Loading your AI agenda...
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/10 animate-pulse">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 shrink-0"></div>
+                  <div className="flex-1 space-y-2 py-1">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : agenda.length === 0 ? (
             <div className="py-6 text-center text-[#a0a0a0]">
