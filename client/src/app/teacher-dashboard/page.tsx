@@ -305,133 +305,133 @@ export default function TeacherDashboard() {
                   </tr>
                 ) : (
                   roster.map((st: any) => {
-                  const gapColor = st.gapStatus === 'Surface Practice'
-                    ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                    : st.gapStatus === 'Exam Strong'
-                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                    : st.gapStatus === 'No Exam Data'
-                    ? 'bg-white/5 text-[#a0a0b0] border-white/10'
-                    : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+                    const gapColor = st.gapStatus === 'Surface Practice'
+                      ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                      : st.gapStatus === 'Exam Strong'
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                        : st.gapStatus === 'No Exam Data'
+                          ? 'bg-white/5 text-[#a0a0b0] border-white/10'
+                          : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
 
-                  return (
-                    <tr key={st.id} className="hover:bg-white/5 transition-colors">
-                      <td className="p-4 font-semibold text-white">
-                        <div className="flex items-center gap-2">
-                          <span>{st.name}</span>
-                          <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-mono font-bold">{st.studentCode || '—'}</span>
-                        </div>
-                        <div className="text-xs font-normal text-[#a0a0a0]">{st.email}</div>
-                      </td>
-                      <td className="p-4 text-right font-bold text-white">{st.quizAccuracy ?? '—'}%</td>
-                      <td className="p-4 text-right font-bold text-white">
-                        {editingAvgStudentId === st.id ? (
-                          <div className="inline-flex items-center justify-end gap-1.5">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              placeholder="0-100"
-                              value={editAvgValue}
-                              onChange={(e) => setEditAvgValue(e.target.value)}
-                              className="w-16 bg-input border border-primary text-white text-center rounded px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-mono"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => handleSaveExamAvg(st.id, editAvgValue)}
-                              disabled={savingAvg}
-                              title="Save Exam Average"
-                              className="text-emerald-400 hover:text-emerald-300 p-1 bg-emerald-500/10 rounded border border-emerald-500/20 cursor-pointer"
-                            >
-                              {savingAvg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                            </button>
-                            {st.manualExamAvg !== null && (
-                              <button
-                                onClick={() => handleSaveExamAvg(st.id, null)}
-                                disabled={savingAvg}
-                                title="Reset to calculated average"
-                                className="text-amber-400 hover:text-amber-300 p-1 bg-amber-500/10 rounded border border-amber-500/20 text-[10px] font-normal px-1.5 flex items-center gap-0.5 cursor-pointer"
-                              >
-                                <RotateCcw className="w-3 h-3" /> Reset
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setEditingAvgStudentId(null)}
-                              disabled={savingAvg}
-                              title="Cancel"
-                              className="text-red-400 hover:text-red-300 p-1 bg-red-500/10 rounded border border-red-500/20 cursor-pointer"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
+                    return (
+                      <tr key={st.id} className="hover:bg-white/5 transition-colors">
+                        <td className="p-4 font-semibold text-white">
+                          <div className="flex items-center gap-2">
+                            <span>{st.name}</span>
+                            <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-mono font-bold">{st.studentCode || '—'}</span>
                           </div>
-                        ) : (
-                          <div className="inline-flex items-center justify-end gap-2 group">
-                            <span>{st.examAverage ?? '—'}%</span>
-                            {st.manualExamAvg !== null && (
-                              <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-mono font-normal border border-primary/30" title="Manually edited by teacher">
-                                Manual
-                              </span>
-                            )}
+                          <div className="text-xs font-normal text-[#a0a0a0]">{st.email}</div>
+                        </td>
+                        <td className="p-4 text-right font-bold text-white">{st.quizAccuracy ?? '—'}%</td>
+                        <td className="p-4 text-right font-bold text-white">
+                          {editingAvgStudentId === st.id ? (
+                            <div className="inline-flex items-center justify-end gap-1.5">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                placeholder="0-100"
+                                value={editAvgValue}
+                                onChange={(e) => setEditAvgValue(e.target.value)}
+                                className="w-16 bg-input border border-primary text-white text-center rounded px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleSaveExamAvg(st.id, editAvgValue)}
+                                disabled={savingAvg}
+                                title="Save Exam Average"
+                                className="text-emerald-400 hover:text-emerald-300 p-1 bg-emerald-500/10 rounded border border-emerald-500/20 cursor-pointer"
+                              >
+                                {savingAvg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                              </button>
+                              {st.manualExamAvg !== null && (
+                                <button
+                                  onClick={() => handleSaveExamAvg(st.id, null)}
+                                  disabled={savingAvg}
+                                  title="Reset to calculated average"
+                                  className="text-amber-400 hover:text-amber-300 p-1 bg-amber-500/10 rounded border border-amber-500/20 text-[10px] font-normal px-1.5 flex items-center gap-0.5 cursor-pointer"
+                                >
+                                  <RotateCcw className="w-3 h-3" /> Reset
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setEditingAvgStudentId(null)}
+                                disabled={savingAvg}
+                                title="Cancel"
+                                className="text-red-400 hover:text-red-300 p-1 bg-red-500/10 rounded border border-red-500/20 cursor-pointer"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center justify-end gap-2 group">
+                              <span>{st.examAverage ?? '—'}%</span>
+                              {st.manualExamAvg !== null && (
+                                <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-mono font-normal border border-primary/30" title="Manually edited by teacher">
+                                  Manual
+                                </span>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setEditingAvgStudentId(st.id);
+                                  setEditAvgValue(st.manualExamAvg !== null && st.manualExamAvg !== undefined ? String(st.manualExamAvg) : String(st.examAverage ?? 0));
+                                }}
+                                title="Edit student's individual exam average"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-[#a0a0b0] hover:text-white p-1 bg-white/5 hover:bg-white/10 rounded border border-white/10 cursor-pointer"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4 text-right font-bold text-indigo-400">{st.masteryScore}%</td>
+                        <td className="p-4 text-center">
+                          {st.gapStatus === 'No Exam Data' ? (
+                            <span className="text-xs text-[#a0a0a0]">—</span>
+                          ) : (
+                            <span className={`text-xs px-2 py-0.5 rounded font-bold border ${gapColor}`}>
+                              {st.gap > 0 ? `+${st.gap}` : st.gap}%
+                            </span>
+                          )}
+                          {st.hasGapFlag && (
+                            <div className="text-[10px] text-red-400 mt-0.5">⚠ Surface</div>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${st.status === 'Excelling' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : st.status === 'On Track' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                            {st.status}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => {
                                 setEditingAvgStudentId(st.id);
                                 setEditAvgValue(st.manualExamAvg !== null && st.manualExamAvg !== undefined ? String(st.manualExamAvg) : String(st.examAverage ?? 0));
                               }}
                               title="Edit student's individual exam average"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-[#a0a0b0] hover:text-white p-1 bg-white/5 hover:bg-white/10 rounded border border-white/10 cursor-pointer"
+                              className="bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-400 border border-amber-500/20 px-2.5 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
                             >
-                              <Edit2 className="w-3 h-3" />
+                              <Edit2 className="w-3.5 h-3.5" /> Edit Avg
+                            </button>
+                            <button
+                              onClick={() => router.push(`/teacher-push?studentId=${st.id}`)}
+                              className="bg-primary/20 hover:bg-primary hover:text-white text-primary border border-primary/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Send className="w-3.5 h-3.5" /> Push
+                            </button>
+                            <button
+                              onClick={() => handleUnenroll(st.id, st.name)}
+                              title="Remove student from classroom"
+                              className="bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 border border-red-500/20 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                        )}
-                      </td>
-                      <td className="p-4 text-right font-bold text-indigo-400">{st.masteryScore}%</td>
-                      <td className="p-4 text-center">
-                        {st.gapStatus === 'No Exam Data' ? (
-                          <span className="text-xs text-[#a0a0a0]">—</span>
-                        ) : (
-                          <span className={`text-xs px-2 py-0.5 rounded font-bold border ${gapColor}`}>
-                            {st.gap > 0 ? `+${st.gap}` : st.gap}%
-                          </span>
-                        )}
-                        {st.hasGapFlag && (
-                          <div className="text-[10px] text-red-400 mt-0.5">⚠ Surface</div>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${st.status === 'Excelling' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : st.status === 'On Track' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
-                          {st.status}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingAvgStudentId(st.id);
-                              setEditAvgValue(st.manualExamAvg !== null && st.manualExamAvg !== undefined ? String(st.manualExamAvg) : String(st.examAverage ?? 0));
-                            }}
-                            title="Edit student's individual exam average"
-                            className="bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-400 border border-amber-500/20 px-2.5 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" /> Edit Avg
-                          </button>
-                          <button
-                            onClick={() => router.push(`/teacher-push?studentId=${st.id}`)}
-                            className="bg-primary/20 hover:bg-primary hover:text-white text-primary border border-primary/30 px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
-                          >
-                            <Send className="w-3.5 h-3.5" /> Push
-                          </button>
-                          <button
-                            onClick={() => handleUnenroll(st.id, st.name)}
-                            title="Remove student from classroom"
-                            className="bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 border border-red-500/20 p-1.5 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                }))}
+                        </td>
+                      </tr>
+                    );
+                  }))}
               </tbody>
             </table>
           </div>
