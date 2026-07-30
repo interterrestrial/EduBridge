@@ -48,8 +48,13 @@ export function resolveStudentId(
   if (req.user.role === 'teacher') {
     const fromParams = req.params.studentId as string | undefined;
     const fromBody = req.body?.studentId as string | undefined;
-    const resolved = fromParams || fromBody;
-    return resolved || req.user.id;
+    if (!allowTeacherOverride && (fromParams || fromBody)) {
+      throw new ApiError(
+        403,
+        'Forbidden: teacher override not allowed on this endpoint',
+      );
+    }
+    return fromParams || fromBody || req.user.id;
   }
   throw new ApiError(403, 'Forbidden: invalid role');
 }

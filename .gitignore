@@ -115,6 +115,7 @@ Thumbs.db
 # Internal tooling (local only)
 .agents/
 .claude/
+.gemini/
 skill-observations/
 
 # Prisma

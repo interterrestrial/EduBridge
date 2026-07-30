@@ -58,8 +58,166 @@ async function main() {
       teacherProfile: { create: { organization: 'Tech Institute', department: 'Computer Science', subject: 'Design & Analysis of Algorithms', specialization: 'Algorithms', experience: 12 } },
     },
   });
+  const teacherSubject = 'Design & Analysis of Algorithms';
 
-  // --- 3. Yash's folders, notes, flashcards (same as before) ---
+  // --- 3. Sample classroom roster (so the teacher dashboard has visible data) ---
+  // 6 synthetic students enrolled in the demo teacher's classroom, each with
+  // notes, quizzes, attempts, attendance, and varied quiz/exam scores so the
+  // blended mastery + practice-vs-exam gap indicators populate immediately.
+  const sampleStudentDefs = [
+    {
+      name: 'Aarav Patel',
+      email: 'aarav.patel@demo.edubridge.edu',
+      className: '6th',
+      section: 'A',
+      attendancePct: 92,
+      avgQuizAccuracy: 88,
+      avgExamPct: 84, // exam strong — performs as well as practice suggests
+      weakTopics: ['Master Theorem', 'Greedy Algorithms'],
+    },
+    {
+      name: 'Diya Reddy',
+      email: 'diya.reddy@demo.edubridge.edu',
+      className: '6th',
+      section: 'A',
+      attendancePct: 85,
+      avgQuizAccuracy: 78,
+      avgExamPct: 80, // aligned
+      weakTopics: ['B+ Trees', 'Indexing'],
+    },
+    {
+      name: 'Vihaan Nair',
+      email: 'vihaan.nair@demo.edubridge.edu',
+      className: '6th',
+      section: 'B',
+      attendancePct: 70,
+      avgQuizAccuracy: 82,
+      avgExamPct: 45, // SURFACE PRACTICE — gap > 20, the headline gap indicator
+      weakTopics: ['Binning', 'IQR Method', 'Normalization'],
+    },
+    {
+      name: 'Ananya Gupta',
+      email: 'ananya.gupta@demo.edubridge.edu',
+      className: '6th',
+      section: 'B',
+      attendancePct: 95,
+      avgQuizAccuracy: 72,
+      avgExamPct: 70, // aligned
+      weakTopics: ['Recurrence Relations'],
+    },
+    {
+      name: 'Arjun Singh',
+      email: 'arjun.singh@demo.edubridge.edu',
+      className: '7th',
+      section: 'A',
+      attendancePct: 60,
+      avgQuizAccuracy: 55,
+      avgExamPct: 48, // low across the board — needs support
+      weakTopics: ['ACID Properties', 'Transactions', 'Joins'],
+    },
+    {
+      name: 'Ishaan Khan',
+      email: 'ishaan.khan@demo.edubridge.edu',
+      className: '7th',
+      section: 'A',
+      attendancePct: 80,
+      avgQuizAccuracy: 65,
+      avgExamPct: 72, // exam strong
+      weakTopics: ['Divide & Conquer'],
+    },
+  ];
+
+  console.log('   Generating sample classroom roster...');
+  // Enroll the primary student too so the teacher's roster shows Yash + 6 sample
+  await prisma.teacherStudent.create({
+    data: {
+      teacherId: teacher.id,
+      studentId: student.id,
+      subject: teacherSubject,
+      className: '6th',
+      section: 'A',
+    },
+  });
+
+  const sampleStudentIds: string[] = [];
+  for (const def of sampleStudentDefs) {
+    const sampleStudent = await prisma.user.create({
+      data: {
+        name: def.name,
+        email: def.email,
+        password: studentPassword,
+        role: 'student',
+        studentCode: `EB-${randInt(100000, 999999)}`,
+        studentProfile: {
+          create: {
+            institution: 'Tech Institute of Engineering',
+            course: 'Computer Science & Data Analytics',
+            semester: '6',
+            totalStudyHours: randInt(20, 80),
+          },
+        },
+      },
+    });
+
+    // Enroll the sample student in the demo teacher's classroom for their (className, section)
+    await prisma.teacherStudent.create({
+      data: {
+        teacherId: teacher.id,
+        studentId: sampleStudent.id,
+        subject: teacherSubject,
+        className: def.className,
+        section: def.section,
+      },
+    });
+    sampleStudentIds.push(sampleStudent.id);
+
+    // Two quizzes per student with weak topics reflecting their weakTopics array
+    const quizTitles = [
+      `${def.name.split(' ')[0]}'s ${def.weakTopics[0]} Practice Quiz`,
+      `${def.name.split(' ')[0]}'s Mixed Topics Quiz`,
+    ];
+    for (let qi = 0; qi < quizTitles.length; qi++) {
+      const quiz = await prisma.quiz.create({
+        data: {
+          title: quizTitles[qi],
+          difficulty: qi === 0 ? 'medium' : 'hard',
+          questionsJson: JSON.stringify([
+            { question: `Sample Q1 about ${def.weakTopics[0]}`, optionA: 'A', optionB: 'B', optionC: 'C', optionD: 'D', correctAnswer: 'B', explanation: 'Sample', topic: def.weakTopics[0] || 'General' },
+            { question: `Sample Q2 about ${def.weakTopics[1] || 'General'}`, optionA: 'A', optionB: 'B', optionC: 'C', optionD: 'D', correctAnswer: 'C', explanation: 'Sample', topic: def.weakTopics[1] || 'General' },
+          ]),
+          studentId: sampleStudent.id,
+        },
+      });
+      await prisma.quizAttempt.create({
+        data: {
+          quizId: quiz.id,
+          studentId: sampleStudent.id,
+          score: Math.round((def.avgQuizAccuracy / 100) * 2),
+          totalQuestions: 2,
+          accuracy: def.avgQuizAccuracy,
+          weakTopicsJson: JSON.stringify(def.weakTopics),
+        },
+      });
+    }
+
+    // Attendance records — generate ~10 days, with status matching attendancePct
+    const today = new Date();
+    for (let d = 0; d < 10; d++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - d);
+      const isPresent = rand() * 100 < def.attendancePct;
+      await prisma.attendanceRecord.create({
+        data: {
+          studentId: sampleStudent.id,
+          subject: teacherSubject,
+          status: isPresent ? 'present' : 'absent',
+          date: date.toISOString().slice(0, 10),
+        },
+      });
+    }
+  }
+
+  // --- 4. Yash's folders, notes, flashcards (same as before) ---
   const folderDataPrep = await prisma.noteFolder.create({
     data: { name: 'Data Preprocessing & Analytics', color: '#6366f1', studentId: student.id },
   });
@@ -99,15 +257,30 @@ async function main() {
     data: { quizId: yashQuiz.id, studentId: student.id, score: 1, totalQuestions: 1, accuracy: 100, weakTopicsJson: JSON.stringify([]) },
   });
 
-  // --- 5. Exams & Exam Scores (teacher creates 3 exams, primary student gets scores) ---
+  // --- 5. Exams & Exam Scores (one per scope + one school-wide) ---
   const EXAMS = [
-    { title: 'Midterm Exam 1', subject: 'Data Preprocessing & Analytics', maxMarks: 100, examDate: '2026-07-15' },
-    { title: 'Midterm Exam 2', subject: 'Design & Analysis of Algorithms', maxMarks: 100, examDate: '2026-07-22' },
-    { title: 'Final Exam', subject: 'Database Systems & Indexing', maxMarks: 100, examDate: '2026-08-01' },
+    { title: '6A Midterm', subject: 'Mathematics', maxMarks: 100, examDate: '2026-07-15', className: '6th', section: 'A' },
+    { title: '6B Midterm', subject: 'Mathematics', maxMarks: 100, examDate: '2026-07-15', className: '6th', section: 'B' },
+    { title: '7A Midterm', subject: 'Mathematics', maxMarks: 100, examDate: '2026-07-22', className: '7th', section: 'A' },
+    { title: 'School-wide Annual Exam', subject: 'Mathematics', maxMarks: 100, examDate: '2026-08-01', className: null, section: null },
   ];
 
   console.log('   Generating exams and scores...');
-  const allStudents = await prisma.user.findMany({ where: { role: 'student', email: { endsWith: '@edubridge.edu' } }, select: { id: true } });
+  // Pull every student account (covers primary, sample, and any manually added)
+  // so the exam scores reflect the full classroom.
+  const allStudents = await prisma.user.findMany({
+    where: { role: 'student' },
+    select: { id: true, email: true },
+  });
+
+  // Build a lookup so the sample students get their tier-specific exam percentage
+  // (drives the headline practice-vs-exam gap on the dashboard)
+  const examPctByEmail: Record<string, number> = Object.fromEntries(
+    sampleStudentDefs.map((d) => [d.email, d.avgExamPct]),
+  );
+  // Primary student gets a low exam score vs their 100% quiz accuracy so they
+  // also surface the headline "Surface Practice" gap story.
+  examPctByEmail['student@edubridge.edu'] = 35;
 
   for (const examData of EXAMS) {
     const exam = await prisma.exam.create({
@@ -116,17 +289,29 @@ async function main() {
         subject: examData.subject,
         maxMarks: examData.maxMarks,
         examDate: examData.examDate,
+        className: examData.className,
+        section: examData.section,
         teacherId: teacher.id,
       },
     });
 
-    // Give each student a score with some correlation to their quiz tier
-    for (const stu of allStudents) {
-      // Base score around 60% with variation based on their tier
-      // We can't easily access tier here, so use a deterministic per-student factor
-      const studentFactor = (rand() - 0.5) * 0.6; // -30% to +30% around base
-      const basePct = 60;
-      const pct = Math.max(20, Math.min(100, Math.round(basePct + studentFactor * 100)));
+    // Only give exam scores to students enrolled in the exam's scope
+    // (skip if exam is class/section-scoped and student is in a different scope)
+    const eligibleStudents = allStudents.filter((s) => {
+      if (!examData.className || !examData.section) return true; // global exam — everyone gets a score
+      const tierPct = examPctByEmail[s.email];
+      // Match by sample-student's className/section; primary student is in 6th A
+      if (s.email === 'student@edubridge.edu') return examData.className === '6th' && examData.section === 'A';
+      const def = sampleStudentDefs.find((d) => d.email === s.email);
+      if (!def) return false;
+      return def.className === examData.className && def.section === examData.section;
+    });
+
+    for (const stu of eligibleStudents) {
+      const tierPct = examPctByEmail[stu.email];
+      const pct = tierPct !== undefined
+        ? tierPct
+        : Math.max(20, Math.min(100, Math.round(60 + (rand() - 0.5) * 60)));
       const marks = Math.round((pct / 100) * exam.maxMarks);
 
       await prisma.examScore.create({
@@ -147,11 +332,11 @@ async function main() {
   const totalExamScores = await prisma.examScore.count();
 
   console.log(`✅ Seed complete!`);
-  console.log(`   📊 ${totalStudents} clean student account(s) (Student Code: EB-100001)`);
+  console.log(`   📊 ${totalStudents} student account(s) (1 primary + ${sampleStudentDefs.length} sample classroom)`);
   console.log(`   📝 ${totalQuizzes} quizzes, ${totalAttempts} quiz attempts`);
   console.log(`   📋 ${totalExams} exams, ${totalExamScores} exam scores`);
   console.log(`   🔑 Login: student@edubridge.edu / demo1234  (primary student)`);
-  console.log(`   🔑 Login: teacher@edubridge.edu / demo1234  (teacher — empty roster ready for enrollment!)`);
+  console.log(`   🔑 Login: teacher@edubridge.edu / demo1234  (teacher — see sample roster with gap indicators!)`);
 }
 
 main()

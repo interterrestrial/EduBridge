@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -233,6 +233,8 @@ model Exam {
   id        String   @id @default(uuid())
   title     String
   subject   String
+  className String?   // nullable = "All classes" (legacy/global exam)
+  section   String?   // nullable = "All sections" within a class
   maxMarks  Int
   examDate  String
   teacherId String
@@ -242,6 +244,7 @@ model Exam {
   scores ExamScore[]
 
   @@index([teacherId])
+  @@index([teacherId, className, section])
 }
 
 model ExamScore {
@@ -265,12 +268,15 @@ model TeacherStudent {
   studentId String
   student   User     @relation("StudentTeachers", fields: [studentId], references: [id], onDelete: Cascade)
   subject       String?
+  className     String?  // grade: "6th", "7th", "10th"
+  section       String?  // letter: "A", "B", "C" (normalized to uppercase)
   manualExamAvg Float?   // Optional teacher-specific override for student's exam average in this classroom
   createdAt     DateTime @default(now())
 
-  @@unique([teacherId, studentId])
+  @@unique([teacherId, studentId, className, section])
   @@index([teacherId])
   @@index([studentId])
+  @@index([teacherId, className, section])
 }
 
 model Notification {

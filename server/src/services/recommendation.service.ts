@@ -1,5 +1,5 @@
 import { LlmService } from './llm.service';
-import { TEACHER_INSIGHTS_PROMPT } from '../prompts/analytics.prompt';
+import { buildTeacherInsightsPrompt } from '../prompts/analytics.prompt';
 
 export interface ClassroomSummary {
   totalStudents: number;
@@ -10,11 +10,32 @@ export interface ClassroomSummary {
   lowPerformingStudents: { name: string; masteryScore: number; weakTopics: string[] }[];
 }
 
+export interface StructuredTopicInsight {
+  topic: string;
+  evidence: string;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export interface StructuredAtRiskStudent {
+  name: string;
+  reason: string;
+  evidence: string;
+  recommendedAction: string;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export interface StructuredRecommendation {
+  action: string;
+  rationale: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
 export interface TeacherRecommendationResult {
-  weakTopics: string[];
-  strongTopics: string[];
-  atRiskStudents: { name: string; reason: string }[];
-  recommendations: string[];
+  weakTopics: (string | StructuredTopicInsight)[];
+  strongTopics: (string | StructuredTopicInsight)[];
+  atRiskStudents: (StructuredAtRiskStudent | { name: string; reason: string })[];
+  recommendations: (string | StructuredRecommendation)[];
+  dataLimitations?: string[];
 }
 
 export class RecommendationService {
@@ -27,10 +48,8 @@ export class RecommendationService {
   async generateTeacherInsights(
     summary: ClassroomSummary
   ): Promise<TeacherRecommendationResult> {
-    const prompt = `${TEACHER_INSIGHTS_PROMPT}
-
-## Classroom Performance Data Summary
-${JSON.stringify(summary, null, 2)}`;
+    const dataJson = JSON.stringify(summary, null, 2);
+    const prompt = buildTeacherInsightsPrompt(dataJson);
 
     const rawResponse = await this.llmService.generate(prompt);
 
@@ -50,6 +69,7 @@ ${JSON.stringify(summary, null, 2)}`;
           'Conduct a revision lecture on weak classroom topics.',
           'Assign practice quizzes to at-risk students.',
         ],
+        dataLimitations: ['Parsing structured LLM insights failed; fallback analysis returned.'],
       };
     }
   }

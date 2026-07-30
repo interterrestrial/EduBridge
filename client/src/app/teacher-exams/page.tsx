@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks/useAuth';
+import { useClassScope } from '../../context/ClassScopeContext';
+import ClassScopeSelector from '../../components/teacher/ClassScopeSelector';
 import {
   Plus,
   Trash2,
@@ -14,6 +16,7 @@ import {
   CheckCircle2,
   X,
   BarChart2,
+  Layers,
 } from 'lucide-react';
 import api from '../../lib/api';
 
@@ -25,6 +28,9 @@ interface Exam {
   examDate: string;
   scoreCount: number;
   classAveragePct: number;
+  className?: string | null;
+  section?: string | null;
+  scopeLabel?: string;
 }
 
 interface StudentScore {
@@ -51,6 +57,7 @@ function pctBgColor(pct: number | null) {
 
 export default function TeacherExams() {
   const { user } = useAuth();
+  const { scope, scopeQuery } = useClassScope();
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -66,6 +73,9 @@ export default function TeacherExams() {
   const [newSubject, setNewSubject] = useState('');
   const [newMaxMarks, setNewMaxMarks] = useState('');
   const [newExamDate, setNewExamDate] = useState('');
+  const [newClassName, setNewClassName] = useState('');
+  const [newSection, setNewSection] = useState('');
+  const [newAllClasses, setNewAllClasses] = useState(false);
   const [creating, setCreating] = useState(false);
 
   // Subject management & filtering state
@@ -123,23 +133,30 @@ export default function TeacherExams() {
   const fetchExams = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/teacher/exams');
+      if (!scope) {
+        setExams([]);
+        return;
+      }
+      const res = await api.get(`/teacher/exams${scopeQuery}`);
       setExams(res.data.exams || []);
-    } catch (err) {
-      console.error('Error fetching exams:', err);
+    } catch (err: any) {
+      if (err.response?.status !== 400 && err.response?.status !== 404) {
+        console.error('Error fetching exams:', err);
+      }
+      setExams([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchExams();
-  }, []);
+    if (scope) fetchExams();
+  }, [scope]);
 
   const handleSelectExam = async (exam: Exam) => {
     try {
       setScoreLoading(true);
-      const res = await api.get(`/teacher/exams/${exam.id}`);
+      const res = await api.get(`/teacher/exams/${exam.id}${scopeQuery}`);
       setSelectedExam(exam);
       setStudents(res.data.students || []);
     } catch (err) {
@@ -191,6 +208,10 @@ export default function TeacherExams() {
       alert('Please fill in all fields.');
       return;
     }
+    if (!newAllClasses && (!newClassName.trim() || !newSection.trim())) {
+      alert('Please choose a Class + Section (or toggle "All Classes").');
+      return;
+    }
 
     try {
       setCreating(true);
@@ -199,6 +220,9 @@ export default function TeacherExams() {
         subject: newSubject,
         maxMarks: Number(newMaxMarks),
         examDate: newExamDate,
+        className: newAllClasses ? undefined : newClassName.trim(),
+        section: newAllClasses ? undefined : newSection.trim(),
+        allClasses: newAllClasses,
       });
       setShowCreateModal(false);
       setIsCustomSubject(false);
@@ -206,6 +230,9 @@ export default function TeacherExams() {
       setNewSubject('');
       setNewMaxMarks('');
       setNewExamDate('');
+      setNewClassName('');
+      setNewSection('');
+      setNewAllClasses(false);
       await fetchExams();
     } catch (err: any) {
       console.error('Create exam error:', err);
@@ -253,12 +280,13 @@ export default function TeacherExams() {
         {/* Header */}
         <div className="bg-card border border-border rounded-3xl p-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="flex-1">
               <h1 className="text-3xl font-bold text-white mb-2">Exam Scores & Mastery</h1>
-              <p className="text-[#a0a0a0] max-w-xl">
-                Create exams, enter student scores, and identify the gap between quiz practice and real understanding.
+              <p className="text-[#a0a0a0] max-w-xl mb-4">
+                Create exams for the active class, enter student scores, and identify the gap between quiz practice and real understanding.
               </p>
+              <ClassScopeSelector variant="page" />
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -447,6 +475,12 @@ export default function TeacherExams() {
                           {exam.title}
                         </h3>
                         <p className="text-sm text-[#a0a0a0] mt-1">{exam.subject}</p>
+                        {(exam as any).scopeLabel && (
+                          <span className="inline-flex items-center gap-1 mt-1.5 bg-input text-[#cfcfcf] border border-border px-2 py-0.5 rounded text-[10px] font-mono font-bold">
+                            <Layers className="w-3 h-3" />
+                            {(exam as any).scopeLabel}
+                          </span>
+                        )}
                       </div>
                       <button
                         onClick={(e) => handleDeleteExam(e, exam.id)}
@@ -593,6 +627,51 @@ export default function TeacherExams() {
                       className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
                     />
                   </div>
+                </div>
+
+                {/* Class + Section targeting */}
+                <div className="space-y-3 pt-2 border-t border-border">
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="all-classes"
+                      type="checkbox"
+                      checked={newAllClasses}
+                      onChange={(e) => setNewAllClasses(e.target.checked)}
+                      className="accent-primary"
+                    />
+                    <label htmlFor="all-classes" className="text-xs font-medium text-white cursor-pointer">
+                      Apply to ALL my classes (school-wide exam)
+                    </label>
+                  </div>
+                  {!newAllClasses && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-2">
+                          Class <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={scope?.className ?? "e.g. 6th"}
+                          value={newClassName || scope?.className || ''}
+                          onChange={(e) => setNewClassName(e.target.value)}
+                          className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-2">
+                          Section <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={scope?.section ?? "A"}
+                          maxLength={4}
+                          value={newSection || scope?.section || ''}
+                          onChange={(e) => setNewSection(e.target.value.toUpperCase())}
+                          className="w-full bg-input border border-border rounded-xl py-2.5 px-3 text-white font-mono focus:outline-none focus:border-primary"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getClassroomHeatmap,
+  getTeacherScopes,
   pushMaterialToStudent,
   getAllNotes,
   getAllQuizzes,
@@ -21,6 +22,7 @@ router.use(authenticate, requireRole('teacher'));
 
 // Heatmap & roster
 router.get('/heatmap', getClassroomHeatmap);
+router.get('/scopes', getTeacherScopes);
 router.get('/notes', getAllNotes);
 router.get('/quizzes', getAllQuizzes);
 router.get('/student/:studentId', getStudentDetail);

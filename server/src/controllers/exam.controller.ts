@@ -7,12 +7,36 @@ import { ApiError, throwIfMissing } from '../utils/apiError';
 /**
  * Create a new exam.
  * POST /api/teacher/exams
+ *
+ * Body: { title, subject, maxMarks, examDate, className?, section?, allClasses? }
+ * - Either (className + section) are required OR allClasses=true.
  */
 export const createExam = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
   const teacherId = req.user.id;
-  const { title, subject, maxMarks, examDate } = req.body;
+  const { title, subject, maxMarks, examDate, className, section, allClasses } = req.body;
   throwIfMissing({ title, subject, maxMarks, examDate });
+
+  let resolvedClass: string | null = null;
+  let resolvedSection: string | null = null;
+  if (allClasses === true) {
+    resolvedClass = null;
+    resolvedSection = null;
+  } else {
+    const trimmedClass = typeof className === 'string' ? className.trim() : '';
+    const trimmedSection = typeof section === 'string' ? section.trim().toUpperCase() : '';
+    if (!trimmedClass || !trimmedSection) {
+      throw new ApiError(400, 'className and section are required (or set allClasses: true)');
+    }
+    // Verify the teacher actually has an enrollment in that (className, section)
+    const exists = await prisma.teacherStudent.findFirst({
+      where: { teacherId, className: trimmedClass, section: trimmedSection },
+      select: { id: true },
+    });
+    if (!exists) throw new ApiError(400, `Invalid scope: no classroom matches ${trimmedClass} • ${trimmedSection}`);
+    resolvedClass = trimmedClass;
+    resolvedSection = trimmedSection;
+  }
 
   const exam = await prisma.exam.create({
     data: {
@@ -20,6 +44,8 @@ export const createExam = asyncHandler(async (req: AuthRequest, res: Response) =
       subject,
       maxMarks: Number(maxMarks),
       examDate,
+      className: resolvedClass,
+      section: resolvedSection,
       teacherId,
     },
   });
@@ -29,14 +55,32 @@ export const createExam = asyncHandler(async (req: AuthRequest, res: Response) =
 
 /**
  * List all exams created by this teacher, with score stats.
+ * Optional query: ?className=&section= scopes to that section + global exams.
  * GET /api/teacher/exams
  */
 export const getExams = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user || req.user.role !== 'teacher') throw new ApiError(403, 'Forbidden: teacher role required');
   const teacherId = req.user.id;
 
+  const rawClass = req.query.className as string | undefined;
+  const rawSection = req.query.section as string | undefined;
+  const hasScope = typeof rawClass === 'string' && rawClass.trim() && typeof rawSection === 'string' && rawSection.trim();
+  const scopeClass = hasScope ? rawClass.trim() : null;
+  const scopeSection = hasScope ? rawSection.trim().toUpperCase() : null;
+
   const exams = await prisma.exam.findMany({
-    where: { teacherId },
+    where: {
+      teacherId,
+      ...(hasScope
+        ? {
+            OR: [
+              { className: scopeClass, section: scopeSection },
+              { className: scopeClass, section: null },
+              { className: null, section: null },
+            ],
+          }
+        : {}),
+    },
     include: {
       scores: {
         select: { id: true, studentId: true, marks: true },
@@ -54,6 +98,11 @@ export const getExams = asyncHandler(async (req: AuthRequest, res: Response) => 
       id: exam.id,
       title: exam.title,
       subject: exam.subject,
+      className: exam.className,
+      section: exam.section,
+      scopeLabel: exam.className && exam.section
+        ? `${exam.className} • ${exam.section}`
+        : 'All Classes',
       maxMarks: exam.maxMarks,
       examDate: exam.examDate,
       createdAt: exam.createdAt,
@@ -74,24 +123,39 @@ export const getExam = asyncHandler(async (req: AuthRequest, res: Response) => {
   const examId = req.params.examId as string;
   throwIfMissing({ examId });
 
+  const teacherId = req.user.id;
   const exam = await prisma.exam.findFirst({
-    where: { id: examId, teacherId: req.user.id },
+    where: { id: examId, teacherId },
     include: {
       scores: true,
     },
   });
   if (!exam) throw new ApiError(404, 'Exam not found or not owned by you');
 
-  // Get all students in this teacher's classroom to show in the table
-  const teacherId = req.user.id;
-  const students = await prisma.user.findMany({
-    where: {
-      role: 'student',
-      teachersMapped: { some: { teacherId } },
-    },
-    select: { id: true, name: true, email: true, studentCode: true },
-    orderBy: { name: 'asc' },
+  // Determine which students to show: only those in the exam's (className, section) scope
+  // - If exam.className=null AND section=null → "All classes" — show all teacher's students
+  // - If exam.className=X AND section=null → "all sections of X" — show X enrollments
+  // - If exam.className=X AND section=Y → only X • Y enrollments
+  const enrollmentWhere: any = { teacherId };
+  if (exam.className && exam.section) {
+    enrollmentWhere.className = exam.className;
+    enrollmentWhere.section = exam.section;
+  } else if (exam.className && !exam.section) {
+    enrollmentWhere.className = exam.className;
+  }
+  const enrollments = await prisma.teacherStudent.findMany({
+    where: enrollmentWhere,
+    select: { studentId: true },
   });
+  const scopedStudentIds = enrollments.map((e) => e.studentId);
+
+  const students = scopedStudentIds.length === 0
+    ? []
+    : await prisma.user.findMany({
+        where: { id: { in: scopedStudentIds }, role: 'student' },
+        select: { id: true, name: true, email: true, studentCode: true },
+        orderBy: { name: 'asc' },
+      });
 
   const scoreMap = new Map(exam.scores.map((s) => [s.studentId, s]));
 

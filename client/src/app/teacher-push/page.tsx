@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks/useAuth';
+import { useClassScope } from '../../context/ClassScopeContext';
+import ClassScopeSelector from '../../components/teacher/ClassScopeSelector';
 import { useSearchParams } from 'next/navigation';
 import {
   Send,
@@ -13,6 +15,7 @@ import {
   Users,
   History,
   AlertTriangle,
+  Layers,
 } from 'lucide-react';
 import api from '../../lib/api';
 
@@ -39,6 +42,7 @@ interface PushAssignment {
 // Inner component that uses useSearchParams (must be wrapped in Suspense)
 function TeacherPushInner() {
   const { user } = useAuth();
+  const { scope, scopeQuery } = useClassScope();
   const searchParams = useSearchParams();
   const preselectedStudentId = searchParams.get('studentId') || '';
   const preselectedNoteId = searchParams.get('noteId') || '';
@@ -63,8 +67,15 @@ function TeacherPushInner() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      if (!scope) {
+        setStudents([]);
+        setNotes([]);
+        setQuizzes([]);
+        setHistory([]);
+        return;
+      }
       const [heatmapRes, notesRes, quizzesRes, historyRes] = await Promise.all([
-        api.get('/teacher/heatmap'),
+        api.get(`/teacher/heatmap${scopeQuery}`),
         api.get('/teacher/notes'),
         api.get('/teacher/quizzes'),
         api.get('/teacher/push-history'),
@@ -74,16 +85,23 @@ function TeacherPushInner() {
       setNotes(notesRes.data?.notes || []);
       setQuizzes(quizzesRes.data?.quizzes || []);
       setHistory(historyRes.data?.assignments || []);
-    } catch (err) {
-      console.error('Error fetching push data:', err);
+    } catch (err: any) {
+      // 400/404 = invalid scope — silently reset to empty state
+      if (err.response?.status !== 400 && err.response?.status !== 404) {
+        console.error('Error fetching push data:', err);
+      }
+      setStudents([]);
+      setNotes([]);
+      setQuizzes([]);
+      setHistory([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (scope) fetchData();
+  }, [scope]);
 
   // Deep-link: preselect student/note/quiz from query param
   useEffect(() => {
@@ -131,6 +149,8 @@ function TeacherPushInner() {
         title: assignmentTitle,
         noteId: noteId || undefined,
         quizId: quizId || undefined,
+        className: scope?.className,
+        section: scope?.section,
       });
 
       const successMsg = selectedStudentId === 'ALL'
@@ -158,12 +178,13 @@ function TeacherPushInner() {
         {/* Header */}
         <div className="bg-card border border-border rounded-3xl p-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="flex-1">
               <h1 className="text-3xl font-bold text-white mb-2">Push Remediation</h1>
-              <p className="text-[#a0a0a0] max-w-xl">
-                Identify struggling students and push targeted notes or practice quizzes directly to their agenda.
+              <p className="text-[#a0a0a0] max-w-xl mb-4">
+                Identify struggling students in the active class and push targeted notes or practice quizzes directly to their agenda.
               </p>
+              <ClassScopeSelector variant="page" />
             </div>
             <button
               onClick={fetchData}

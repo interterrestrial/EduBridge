@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks/useAuth';
+import { useClassScope } from '../../context/ClassScopeContext';
+import ClassScopeSelector from '../../components/teacher/ClassScopeSelector';
 import {
   Users,
   TrendingUp,
@@ -18,12 +20,14 @@ import {
   Check,
   RotateCcw,
   UserPlus,
+  Layers,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
+  const { scope, scopeQuery } = useClassScope();
   const [heatmapData, setHeatmapData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -32,6 +36,8 @@ export default function TeacherDashboard() {
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [enrollEmail, setEnrollEmail] = useState('');
   const [enrollSubject, setEnrollSubject] = useState('');
+  const [enrollClassName, setEnrollClassName] = useState('');
+  const [enrollSection, setEnrollSection] = useState('');
   const [enrolling, setEnrolling] = useState(false);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [editingAvgStudentId, setEditingAvgStudentId] = useState<string | null>(null);
@@ -60,15 +66,25 @@ export default function TeacherDashboard() {
   );
 
   const handleOpenEnrollModal = () => {
+    // Prefill with the active scope so teachers usually just type the student code
+    setEnrollClassName(scope?.className ?? '');
+    setEnrollSection(scope?.section ?? '');
     setShowEnrollModal(true);
   };
 
   const handleEnrollStudent = async (studentId?: string, inputVal?: string) => {
+    if (!enrollClassName.trim() || !enrollSection.trim()) {
+      alert('Please enter both Class and Section before enrolling.');
+      return;
+    }
     try {
       if (studentId) setEnrollingId(studentId);
       else setEnrolling(true);
 
-      const payload: any = {};
+      const payload: any = {
+        className: enrollClassName.trim(),
+        section: enrollSection.trim(),
+      };
       if (enrollSubject.trim()) {
         payload.subject = enrollSubject.trim();
       }
@@ -97,9 +113,9 @@ export default function TeacherDashboard() {
   };
 
   const handleUnenroll = async (studentId: string, name: string) => {
-    if (!confirm(`Are you sure you want to remove ${name} from your classroom?`)) return;
+    if (!confirm(`Are you sure you want to remove ${name} from this section?`)) return;
     try {
-      await api.delete(`/teacher/students/${studentId}`);
+      await api.delete(`/teacher/students/${studentId}`, { params: { className: scope?.className, section: scope?.section } });
       await fetchClassroomData();
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to remove student');
@@ -111,7 +127,7 @@ export default function TeacherDashboard() {
     try {
       await api.patch(`/teacher/students/${studentId}/exam-avg`, {
         examAverage: val === null || val.trim() === '' ? null : Number(val),
-      });
+      }, { params: { className: scope?.className, section: scope?.section } });
       setEditingAvgStudentId(null);
       await fetchClassroomData();
     } catch (err: any) {
@@ -124,18 +140,28 @@ export default function TeacherDashboard() {
   const fetchClassroomData = async () => {
     try {
       setLoading(true);
-      const heatmapRes = await api.get('/teacher/heatmap');
+      if (!scope) {
+        setHeatmapData({ summary: { totalStudents: 0, averageClassMastery: 0, averageAttendance: 0 }, heatmap: [], studentRoster: [] });
+        return;
+      }
+      const heatmapRes = await api.get(`/teacher/heatmap${scopeQuery}`);
       setHeatmapData(heatmapRes.data);
-    } catch (err) {
-      console.error('Error fetching teacher data:', err);
+    } catch (err: any) {
+      // 400 = no valid scope (e.g. after unenroll). Fall back to empty state.
+      // 404 = endpoint not found or stale resource.
+      if (err.response?.status === 400 || err.response?.status === 404) {
+        setHeatmapData({ summary: { totalStudents: 0, averageClassMastery: 0, averageAttendance: 0 }, heatmap: [], studentRoster: [] });
+      } else {
+        console.error('Error fetching teacher data:', err);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchClassroomData();
-  }, []);
+    if (scope) fetchClassroomData();
+  }, [scope]);
 
   const summary = heatmapData?.summary || { totalStudents: 0, averageClassMastery: 0, averageAttendance: 0 };
   const heatmap = heatmapData?.heatmap || [];
@@ -148,14 +174,16 @@ export default function TeacherDashboard() {
         {/* Welcome Section */}
         <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-3xl p-8 relative overflow-hidden bg-card">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="flex-1">
               <h1 className="font-heading text-3xl font-bold text-white mb-2">
-                {user?.name || 'Teacher'} • <span className="text-primary font-normal">{user?.teacherProfile?.subject || user?.teacherProfile?.department || 'Design & Analysis of Algorithms'}</span> 👋
+                {user?.name || 'Teacher'} 👋
               </h1>
-              <p className="text-[#a0a0a0] max-w-xl">
-                Monitor class weak topic heatmaps, track student attendance, and push targeted remedial study materials directly to struggling students' agendas.
+              <p className="text-[#a0a0a0] max-w-xl mb-4">
+                Monitor this class's weak topic heatmap, track attendance, and push targeted remedial study materials directly to struggling students' agendas.
               </p>
+              {/* Active Class Scope Selector — prominent, on the page itself */}
+              <ClassScopeSelector variant="page" />
             </div>
             <button
               onClick={fetchClassroomData}
@@ -254,6 +282,7 @@ export default function TeacherDashboard() {
               <thead className="bg-input/50 text-xs uppercase text-[#a0a0a0] border-b border-border">
                 <tr>
                   <th className="p-4">Student Name</th>
+                  <th className="p-4 text-center">Class • Sec</th>
                   <th className="p-4 text-right">Quiz Accuracy</th>
                   <th className="p-4 text-right">Exam Avg</th>
                   <th className="p-4 text-right">Mastery</th>
@@ -296,6 +325,11 @@ export default function TeacherDashboard() {
                           <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-mono font-bold">{st.studentCode || '—'}</span>
                         </div>
                         <div className="text-xs font-normal text-[#a0a0a0]">{st.email}</div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className="text-xs font-mono font-bold text-white bg-input px-2 py-0.5 rounded border border-border">
+                          {st.className || '—'} <span className="text-[#a0a0a0]">•</span> {st.section || '—'}
+                        </span>
                       </td>
                       <td className="p-4 text-right font-bold text-white">{st.quizAccuracy ?? '—'}%</td>
                       <td className="p-4 text-right font-bold text-white">
@@ -431,12 +465,36 @@ export default function TeacherDashboard() {
 
               {/* Enroll by code or email */}
               <div className="space-y-4 bg-input/50 p-4 rounded-xl border border-border">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold uppercase text-[#a0a0a0] block mb-1.5">Class <span className="text-red-400">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 6th"
+                      value={enrollClassName}
+                      onChange={(e) => setEnrollClassName(e.target.value)}
+                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold uppercase text-[#a0a0a0] block mb-1.5">Section <span className="text-red-400">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. A"
+                      maxLength={4}
+                      value={enrollSection}
+                      onChange={(e) => setEnrollSection(e.target.value.toUpperCase())}
+                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="text-xs font-bold uppercase text-[#a0a0a0] block mb-1.5">Subject / Course Name</label>
+                  <label className="text-xs font-bold uppercase text-[#a0a0a0] block mb-1.5">Subject (optional)</label>
                   <input
                     type="text"
                     list="enroll-subjects-list"
-                    placeholder={user?.teacherProfile?.subject || user?.teacherProfile?.department || "Computer Science 101"}
+                    placeholder={user?.teacherProfile?.subject || user?.teacherProfile?.department || "Mathematics"}
                     value={enrollSubject}
                     onChange={(e) => setEnrollSubject(e.target.value)}
                     className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
@@ -446,7 +504,6 @@ export default function TeacherDashboard() {
                       <option key={idx} value={s} />
                     ))}
                   </datalist>
-                  <p className="text-[11px] text-[#a0a0a0] mt-1">Specify what subject or course this student is enrolling for (leave blank to use your default subject).</p>
                 </div>
 
                 <div>
@@ -461,7 +518,7 @@ export default function TeacherDashboard() {
                     />
                     <button
                       onClick={() => handleEnrollStudent(undefined, enrollEmail)}
-                      disabled={!enrollEmail.trim() || enrolling}
+                      disabled={!enrollEmail.trim() || !enrollClassName.trim() || !enrollSection.trim() || enrolling}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5 shrink-0 cursor-pointer"
                     >
                       {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} Enroll
