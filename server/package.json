@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "prisma generate && prisma db push && tsc",
-    "start": "node dist/server.js",
+    "build": "prisma generate && tsc",
+    "start": "npx prisma db push && node dist/server.js",
     "dev": "ts-node src/server.ts",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
