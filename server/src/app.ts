@@ -16,7 +16,7 @@ import { ApiError } from './utils/apiError';
 const app: Application = express();
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: (process.env.CLIENT_URL || 'http://localhost:3000').replace(/\/$/, ''),
   credentials: true,
 }));
 

@@ -38,7 +38,7 @@ export default function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
     { name: 'Flashcards', href: '/flashcards', icon: Layers },
     { name: 'Quizzes', href: '/quizzes', icon: HelpCircle },
     { name: 'AI Timetable', href: '/timetable', icon: Calendar },
-    { name: 'Gamified Progress', href: '/progress', icon: TrendingUp },
+    { name: 'Progress', href: '/progress', icon: TrendingUp },
   ];
 
   const teacherLinks = [

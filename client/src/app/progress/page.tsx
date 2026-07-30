@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { TrendingUp, Award, Target, Zap, Loader2, AlertTriangle, CheckCircle2, UserCheck, BookOpen, GraduationCap, Calendar } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { Skeleton } from '../../components/ui/Skeleton';
 import api from '../../lib/api';
 
 export default function ProgressPage() {
@@ -42,13 +43,16 @@ export default function ProgressPage() {
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-white mb-2">Gamified Progress & Analytics</h1>
+          <h1 className="font-heading text-3xl font-bold text-white mb-2">Progress & Analytics</h1>
           <p className="text-[#a0a0a0]">Track your blended mastery, exam readiness, attendance, and graded exam results.</p>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-[#a0a0a0] flex items-center justify-center gap-2">
-            <Loader2 className="w-5 h-5 animate-spin text-primary" /> Computing your gamified performance...
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}
+            </div>
+            <Skeleton className="h-64 rounded-2xl" />
           </div>
         ) : (
           <>

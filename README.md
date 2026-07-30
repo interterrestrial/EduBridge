@@ -30,31 +30,28 @@ EduBridge bridges this gap by creating an AI learning companion for every studen
 
 ## 👨‍🎓 Student Portal
 
-- Secure Authentication
+- Secure Custom JWT & Google OAuth Authentication
 - Upload Notes, PDFs, and Study Material
 - AI Tutor for Personalized Learning
 - AI Chat with Context-Aware Responses
 - AI Flashcard Generator
 - Adaptive Quiz Generator
-- Personalized Revision Planner
-- Progress Dashboard
-- Learning Analytics
-- Performance Tracking
+- AI-Generated Study Timetables
+- Gamified Progress & Mastery Tracking
+- Learning Analytics & Performance Tracking
 - Weak Topic Identification
-- Learning History
 
 ---
 
 ## 👨‍🏫 Teacher Dashboard
 
-- Classroom Overview
+- Classroom Overview & Enrollment Management
 - Student Performance Analytics
-- Weak Concept Detection
+- Real-Time Classroom Weak Topic Heatmap
+- Push Targeted Remedial Notes to Struggling Students
+- Monitor Student Mastery vs. Exam Averages
 - AI-generated Student Reports
-- Learning Progress Tracking
 - Classroom Trend Analysis
-- Personalized Recommendations
-- At-risk Student Identification
 
 ---
 
@@ -62,10 +59,10 @@ EduBridge bridges this gap by creating an AI learning companion for every studen
 
 EduBridge leverages Artificial Intelligence to create a unique learning experience for every student by:
 
-- Understanding uploaded notes and study materials
+- Processing uploaded notes and study materials using semantic embeddings
 - Providing context-aware tutoring using Retrieval-Augmented Generation (RAG)
 - Generating adaptive quizzes based on learning history
-- Creating personalized flashcards
+- Creating personalized flashcards and study agendas
 - Identifying misconceptions and weak concepts
 - Tracking student mastery over time
 - Recommending targeted revision plans
@@ -77,23 +74,23 @@ EduBridge leverages Artificial Intelligence to create a unique learning experien
 
 ## Frontend
 
-- Next.js
+- Next.js (App Router)
 - React
 - TypeScript
 - Tailwind CSS
-- Framer Motion
+- Chart.js (for gamified progress visualization)
 
 ## Backend
 
-- FastAPI
-- Python
+- Node.js
+- Express.js
+- TypeScript
 
 ## Artificial Intelligence
 
 - Google Gemini API
 - LangChain
-- FAISS Vector Database
-- Sentence Transformers
+- FAISS Vector Database (faiss-node)
 - Retrieval-Augmented Generation (RAG)
 
 ## Database
@@ -103,12 +100,13 @@ EduBridge leverages Artificial Intelligence to create a unique learning experien
 
 ## Authentication
 
-- Clerk Authentication
+- Custom JWT Auth
+- Google OAuth 2.0 (@react-oauth/google & google-auth-library)
 
 ## Deployment
 
-- Vercel
-- Railway / Render
+- Vercel (Frontend)
+- Render (Backend)
 
 ---
 
@@ -117,29 +115,25 @@ EduBridge leverages Artificial Intelligence to create a unique learning experien
 ```text
 edubridge/
 │
-├── frontend/
-│   ├── app/
-│   ├── components/
-│   ├── hooks/
-│   ├── lib/
-│   └── public/
+├── client/                 # Next.js Frontend
+│   ├── src/
+│   │   ├── app/            # App Router Pages
+│   │   ├── components/     # UI & Layout Components
+│   │   ├── hooks/          # Custom React Hooks
+│   │   └── lib/            # Utilities & API client
+│   └── public/             # Static Assets
 │
-├── backend/
-│   ├── api/
-│   ├── ai/
-│   ├── database/
-│   ├── models/
-│   ├── services/
-│   └── utils/
+├── server/                 # Express Backend
+│   ├── src/
+│   │   ├── controllers/    # Route Handlers
+│   │   ├── routes/         # Express Routes
+│   │   ├── services/       # AI & RAG Logic
+│   │   ├── middleware/     # Auth & Upload Middleware
+│   │   └── config/         # Environment Configs
+│   ├── prisma/             # Prisma Schema & Migrations
+│   └── uploads/            # Temporary PDF Storage
 │
-├── uploads/
-│
-├── vector_db/
-│
-├── docs/
-│
-├── README.md
-└── requirements.txt
+└── README.md
 ```
 
 ---
@@ -154,7 +148,7 @@ Students upload notes, PDFs, or learning materials.
 
 ### Step 2
 
-The AI processes the content, creates embeddings, and builds a searchable knowledge base.
+The AI processes the content, creates semantic embeddings, and builds a searchable FAISS knowledge base.
 
 ↓
 
@@ -172,29 +166,29 @@ The system continuously evaluates quiz performance and identifies knowledge gaps
 
 ### Step 5
 
-EduBridge generates adaptive quizzes, personalized flashcards, and revision plans tailored to each learner.
+EduBridge generates adaptive quizzes, personalized flashcards, and AI timetables tailored to each learner.
 
 ↓
 
 ### Step 6
 
-Teachers receive real-time insights into classroom performance, weak topics, and students requiring additional support.
+Teachers receive real-time insights into classroom performance via heatmaps, and can instantly push remedial notes to students who need extra support.
 
 ---
 
 # 🧠 AI Workflow
 
 1. Upload Study Material
-2. Document Processing
-3. Text Chunking
-4. Embedding Generation
-5. Vector Database Storage
+2. Document Processing & Parsing (pdf-parse)
+3. Text Chunking (LangChain)
+4. Embedding Generation (Google GenAI)
+5. Vector Database Storage (FAISS)
 6. Retrieval-Augmented Generation (RAG)
 7. Personalized AI Tutoring
 8. Adaptive Quiz Generation
-9. Flashcard Creation
-10. Progress Tracking
-11. Teacher Analytics
+9. Flashcard & Timetable Creation
+10. Progress & Mastery Tracking
+11. Teacher Heatmap Analytics
 
 ---
 
@@ -210,17 +204,17 @@ Instead of replacing teachers, EduBridge enhances classroom learning by providin
 
 # 📊 Key Modules
 
-- AI Tutor
-- Note Management
-- AI Chat
+- AI Tutor & Chat
+- Note Management & Semantic Search
 - Flashcard Generator
 - Adaptive Quiz Engine
-- Personalized Revision Planner
+- Gamified Progress Dashboard
+- AI Study Timetable
 - Student Dashboard
 - Teacher Dashboard
-- Learning Analytics
-- Knowledge Gap Detection
-- Classroom Insights
+- Learning Analytics & Mastery Tracking
+- Classroom Heatmap Insights
+- Direct Remedial Note Pushing
 
 ---
 
@@ -230,8 +224,7 @@ Instead of replacing teachers, EduBridge enhances classroom learning by providin
 - OCR Support for Handwritten Notes
 - AI-powered Doubt Detection
 - Real-time Classroom Collaboration
-- Gamification & Achievements
-- AI Study Planner
+- Global Leaderboards
 - Mobile Application
 - Multi-language Support
 - Calendar & LMS Integration
@@ -243,21 +236,20 @@ Instead of replacing teachers, EduBridge enhances classroom learning by providin
 This project demonstrates practical experience with:
 
 - Retrieval-Augmented Generation (RAG)
-- Large Language Models (LLMs)
-- Prompt Engineering
-- Vector Databases
-- Personalized Learning Systems
+- Large Language Models (LLMs) & Prompt Engineering
+- Vector Databases (FAISS)
 - Educational Technology (EdTech)
-- Full-Stack Web Development
-- Authentication & Authorization
+- Full-Stack Web Development (Next.js & Node.js)
+- Authentication (JWT & OAuth)
 - RESTful APIs
-- AI-powered Recommendation Systems
+- Database Modeling (Prisma & PostgreSQL)
 
 ---
 
 # 🌐 Live Demo
 
-Coming Soon
+**Frontend**: [https://edubridge-sigma-one.vercel.app](https://edubridge-sigma-one.vercel.app)  
+**Backend**: [https://edu-bridge-3pt2.onrender.com](https://edu-bridge-3pt2.onrender.com)
 
 ---
 
