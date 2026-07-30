@@ -67,7 +67,7 @@ All production code changes have been applied to the codebase:
 
 - **Root Directory**: `server`
 - **Build Command**: `npm install && npm run build`
-- **Start Command**: `node dist/server.js`
+- **Start Command**: `npm start`
 - **Instance Type**: Free
 
 ## Vercel Build Settings
@@ -80,13 +80,10 @@ All production code changes have been applied to the codebase:
 
 ## Post-Deploy Database Setup
 
-After first Render deploy, run migration:
-```bash
-# Using Render Shell, or from laptop with External DB URL:
-npx prisma db push
-```
-
-This creates all 18 tables in PostgreSQL.
+`npm start` runs `prisma db push` before starting the API, so a deployment with
+a valid `DATABASE_URL` creates or updates the PostgreSQL schema automatically.
+If that step fails, the deploy fails and Render logs identify the database
+configuration problem instead of serving API requests that all return 500.
 
 ---
 

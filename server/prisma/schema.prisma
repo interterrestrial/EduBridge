@@ -3,7 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  // Render supplies a PostgreSQL connection string in DATABASE_URL.  SQLite
+  // files are ephemeral on Render and cannot use that connection string.
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -293,4 +295,3 @@ model Notification {
   @@index([userId, isRead])
   @@index([createdAt])
 }
-
