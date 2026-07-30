@@ -356,9 +356,6 @@ export default function TeacherDashboard() {
                           {st.className || '—'} <span className="text-[#a0a0a0]">•</span> {st.section || '—'}
                         </span>
                       </td>
-                          </div>
-                          <div className="text-xs font-normal text-[#a0a0a0]">{st.email}</div>
-                        </td>
                         <td className="p-4 text-right font-bold text-white">{st.quizAccuracy ?? '—'}%</td>
                         <td className="p-4 text-right font-bold text-white">
                           {editingAvgStudentId === st.id ? (
