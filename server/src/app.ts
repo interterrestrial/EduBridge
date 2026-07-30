@@ -69,7 +69,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   // Surface statusCode if present (e.g. custom errors with .statusCode)
   const statusCode = typeof err?.statusCode === 'number' ? err.statusCode : 500;
   res.status(statusCode).json({
-    error: 'Internal server error',
+    error: err?.message || 'Internal server error',
+    stack: process.env.NODE_ENV !== 'production' ? err?.stack : err?.stack, // Temporarily expose stack for debugging
     requestId: Date.now().toString(),
   });
 });
