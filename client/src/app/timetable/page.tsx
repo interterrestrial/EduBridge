@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { Calendar, Plus, Loader2, Play, CheckCircle2, Clock, BookOpen, Target } from 'lucide-react';
+import { Calendar, Plus, Loader2, Clock, BookOpen, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 
@@ -13,6 +13,7 @@ export default function TimetablePage() {
   const [schedules, setSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState('');
 
   // Form State
   const [examDate, setExamDate] = useState('2026-08-15');
@@ -20,13 +21,16 @@ export default function TimetablePage() {
   const [dailyHours, setDailyHours] = useState(2);
   const [showModal, setShowModal] = useState(false);
 
-  const [customSubjectsList] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
+  // Safe client-side only — avoids SSR crash from localStorage access
+  const [customSubjectsList, setCustomSubjectsList] = useState<string[]>([]);
+  useEffect(() => {
+    try {
       const saved = localStorage.getItem('edubridge_custom_subjects');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) setCustomSubjectsList(JSON.parse(saved));
+    } catch {
+      // ignore parse errors
     }
-    return [];
-  });
+  }, []);
 
   const availableSubjects = Array.from(
     new Set([
@@ -63,6 +67,7 @@ export default function TimetablePage() {
   const handleGenerate = async () => {
     try {
       setGenerating(true);
+      setGenerateError('');
       await api.post('/schedule/generate', {
         studentId,
         examDate,
@@ -74,13 +79,14 @@ export default function TimetablePage() {
       fetchSchedules();
     } catch (err: any) {
       console.error('Schedule generation error:', err);
-      alert(err.response?.data?.error || 'Failed to generate study timetable');
+      setGenerateError(err.response?.data?.error || 'Failed to generate study timetable. Please try again.');
     } finally {
       setGenerating(false);
     }
   };
 
   const activeSchedule = schedules.length > 0 ? schedules[0] : null;
+
 
   return (
     <DashboardLayout>
@@ -156,21 +162,28 @@ export default function TimetablePage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-border flex justify-end gap-3">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl text-sm text-[#a0a0a0] hover:text-white cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleGenerate}
-                  disabled={generating}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer"
-                >
-                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  {generating ? 'Computing Timetable...' : 'Generate Timetable'}
-                </button>
+              <div className="pt-4 border-t border-border space-y-3">
+                {generateError && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-lg">
+                    {generateError}
+                  </div>
+                )}
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => { setShowModal(false); setGenerateError(''); }}
+                    className="px-4 py-2 rounded-xl text-sm text-[#a0a0a0] hover:text-white cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={generating}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                  >
+                    {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    {generating ? 'Computing Timetable...' : 'Generate Timetable'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
