@@ -61,8 +61,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     message: err?.message,
   });
 
-  if (err instanceof ApiError) {
-    res.status(err.statusCode).json({ error: err.message });
+  if (err instanceof ApiError || err?.name === 'ApiError') {
+    res.status(err.statusCode || 500).json({ error: err.message });
     return;
   }
 

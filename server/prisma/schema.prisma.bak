@@ -5,8 +5,8 @@ generator client {
 datasource db {
   // Render supplies a PostgreSQL connection string in DATABASE_URL.  SQLite
   // files are ephemeral on Render and cannot use that connection string.
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
