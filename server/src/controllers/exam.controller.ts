@@ -157,7 +157,7 @@ export const getExam = asyncHandler(async (req: AuthRequest, res: Response) => {
         orderBy: { name: 'asc' },
       });
 
-  const scoreMap = new Map(exam.scores.map((s) => [s.studentId, s]));
+  const scoreMap = new Map<string, any>(exam.scores.map((s) => [s.studentId, s]));
 
   const studentsWithScores = students.map((student) => {
     const score = scoreMap.get(student.id);

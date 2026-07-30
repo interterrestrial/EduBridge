@@ -92,7 +92,7 @@ export const getClassroomHeatmap = asyncHandler(async (req: AuthRequest, res: Re
   });
 
   const topicAccuracyMap: Record<string, { correctSum: number; totalSum: number }> = {};
-  const studentRoster = [];
+  const studentRoster: any[] = [];
 
   for (const student of students) {
     const attempts = student.quizAttempts;

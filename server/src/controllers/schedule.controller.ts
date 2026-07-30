@@ -16,7 +16,7 @@ export const generateSchedule = asyncHandler(async (req: AuthRequest, res: Respo
 
   const notes = await prisma.note.findMany({ where: { studentId } });
   const attempts = await prisma.quizAttempt.findMany({ where: { studentId } });
-  const weakTopics = Array.from(new Set(attempts.flatMap((a) => JSON.parse(a.weakTopicsJson || '[]'))));
+  const weakTopics = Array.from(new Set(attempts.flatMap((a) => JSON.parse(a.weakTopicsJson || '[]')))) as string[];
 
   const prompt = buildSchedulePrompt({
     examDate,
