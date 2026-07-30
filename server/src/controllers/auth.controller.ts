@@ -35,33 +35,51 @@ export const register = asyncHandler(async (req: AuthRequest, res: Response) => 
     throw new ApiError(400, 'Invalid role. Must be student or teacher.');
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) throw new ApiError(409, 'User already exists');
+  const normalizedEmail = String(email).trim().toLowerCase();
+
+  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (existing) {
+    throw new ApiError(
+      409,
+      existing.provider === 'google'
+        ? 'This email is linked to Google sign-in. Use "Continue with Google" to log in.'
+        : 'An account already exists with this email. Please sign in.'
+    );
+  }
 
   const hashedPassword = await hashPassword(password);
   const studentCode = role === 'student' ? await generateStudentCode() : undefined;
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      studentCode,
-      studentProfile: role === 'student' ? { create: {} } : undefined,
-      teacherProfile: role === 'teacher' ? { create: {} } : undefined,
-    },
-    include: {
-      studentProfile: true,
-      teacherProfile: true,
-      teachersMapped: {
-        include: {
-          teacher: {
-            select: { id: true, name: true, email: true, teacherProfile: true },
+
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: {
+        name: String(name).trim(),
+        email: normalizedEmail,
+        password: hashedPassword,
+        role,
+        studentCode,
+        studentProfile: role === 'student' ? { create: {} } : undefined,
+        teacherProfile: role === 'teacher' ? { create: {} } : undefined,
+      },
+      include: {
+        studentProfile: true,
+        teacherProfile: true,
+        teachersMapped: {
+          include: {
+            teacher: {
+              select: { id: true, name: true, email: true, teacherProfile: true },
+            },
           },
         },
       },
-    },
-  });
+    });
+  } catch (err: any) {
+    if (err?.code === 'P2002') {
+      throw new ApiError(409, 'An account already exists with this email.');
+    }
+    throw err;
+  }
 
   const token = generateToken({ id: user.id, email: user.email, role: user.role });
   res.status(201).json({ message: 'User registered successfully', token, user: sanitizeUser(user) });
@@ -71,8 +89,10 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { email, password } = req.body;
   throwIfMissing({ email, password });
 
+  const normalizedEmail = String(email).trim().toLowerCase();
+
   let user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
     include: {
       studentProfile: true,
       teacherProfile: true,

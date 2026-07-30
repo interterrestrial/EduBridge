@@ -54,13 +54,24 @@ app.use((_req: Request, res: Response) => {
 
 // Central error handler — converts ApiError to its status, everything else to 500
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const statusCode = err?.statusCode || (err instanceof ApiError ? err.statusCode : undefined);
-  if (typeof statusCode === 'number') {
-    res.status(statusCode).json({ error: err.message || 'Request failed' });
+  // Always log real error details so Render logs show the root cause
+  console.error('[API ERROR]', {
+    name: err?.name,
+    code: err?.code,          // Prisma error codes: P1001, P2002, P2021, etc.
+    message: err?.message,
+  });
+
+  if (err instanceof ApiError) {
+    res.status(err.statusCode).json({ error: err.message });
     return;
   }
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+
+  // Surface statusCode if present (e.g. custom errors with .statusCode)
+  const statusCode = typeof err?.statusCode === 'number' ? err.statusCode : 500;
+  res.status(statusCode).json({
+    error: 'Internal server error',
+    requestId: Date.now().toString(),
+  });
 });
 
 export default app;
