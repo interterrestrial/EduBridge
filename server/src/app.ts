@@ -53,9 +53,10 @@ app.use((_req: Request, res: Response) => {
 });
 
 // Central error handler — converts ApiError to its status, everything else to 500
-app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  if (err instanceof ApiError) {
-    res.status(err.statusCode).json({ error: err.message });
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const statusCode = err?.statusCode || (err instanceof ApiError ? err.statusCode : undefined);
+  if (typeof statusCode === 'number') {
+    res.status(statusCode).json({ error: err.message || 'Request failed' });
     return;
   }
   console.error('Unhandled error:', err);

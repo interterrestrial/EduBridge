@@ -158,13 +158,35 @@ export const googleAuth = asyncHandler(async (req: AuthRequest, res: Response) =
   const { token } = req.body;
   throwIfMissing({ token });
 
-  const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) throw new ApiError(400, 'Invalid Google token');
+  let payload: any = null;
 
-  const payload = await response.json();
-  if (!payload?.email) throw new ApiError(400, 'Invalid Google payload');
+  // 1. Try Google UserInfo endpoint (for access_token)
+  try {
+    const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (userInfoRes.ok) {
+      payload = await userInfoRes.json();
+    }
+  } catch (e) {
+    // Ignore and try tokeninfo
+  }
+
+  // 2. Try Google TokenInfo endpoint (for credential ID token)
+  if (!payload?.email) {
+    try {
+      const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(token)}`);
+      if (tokenInfoRes.ok) {
+        payload = await tokenInfoRes.json();
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
+
+  if (!payload?.email) {
+    throw new ApiError(400, 'Invalid Google token or expired session');
+  }
 
   const { email, name, sub: googleId, picture: avatar } = payload;
 
